@@ -15,25 +15,25 @@ class TwoElectronCV:
     [1] Oldham, K. B.; Myland, J. C. Modelling cyclic voltammetry without 
     digital simulation, Electrochimica Acta, 56, 2011, 10612-10625. 
     """  
-    ########################################################################## 
+     
     def __init__(self, E_start, E_switch, E_not1, E_not2, scanrate, mV_step, 
                  c_bulk, diff_r, diff_i, diff_p, disk_radius, temperature): 
         """Parameters to define the CV setup that are shared by all 
         reaction mechanism functions available for simulation.
         """
-        self.E_start = E_start   #starting potential (V)
-        self.E_switch = E_switch   #switching potential (V)
-        self.E_not1 = E_not1   #first electron reduction potential (V)
-        self.E_not2 = E_not2   #second electron reduction potential (V)
-        self.scanrate = scanrate   #scanrate (V/s) 
-        self.potential_step = (mV_step / 1000)  #potential step (V) 
+        self.E_start = E_start   # starting potential (V)
+        self.E_switch = E_switch   # switching potential (V)
+        self.E_not1 = E_not1   # first reduction potential (V)
+        self.E_not2 = E_not2   # second reduction potential (V)
+        self.scanrate = scanrate   # scanrate (V/s) 
+        self.potential_step = (mV_step / 1000)  # potential step (V) 
         self.delta_t = (self.potential_step / self.scanrate) # time step (s)
         self.c_bulk = c_bulk   # bulk [reactant] (mM or mol/m^3) 
         self.diff_r = (diff_r / 1e4)  # D coefficient of reactant (m^2/s)
         self.diff_i = (diff_i / 1e4)  # D coefficient of intermediate (m^2/s)
         self.diff_p = (diff_p / 1e4)  # D coefficient of product (m^2/s)
         self.area = np.pi*((disk_radius / 1000)**2)  # Electrode area (m^2)        
-        self.temperature = temperature #kelvin
+        self.temperature = temperature  # kelvin
         self.N_max = int(np.abs(E_switch - E_start)*2 / self.potential_step) #number of points
     ########################################################################## 
     def voltage_profile(self):
@@ -108,9 +108,9 @@ class TwoElectronCV:
                                  * (W_func[N-1] + V_func[N-1]) -1))
                     
                 current2[N-1] = (((E_func1[N-1]*constant) + Z_func[N-1]*summ1 
-                                - (V_func[N-1]*(Z_func[N-1] + Y_func[N-1]) - 1)
-                                * summ2) / ((Z_func[N-1] + Y_func[N-1])
-                                * (W_func[N-1] + V_func[N-1]) -1))  
+                                 - (V_func[N-1]*(Z_func[N-1] + Y_func[N-1]) 
+                                 - 1)*summ2) / ((Z_func[N-1] + Y_func[N-1])
+                                 * (W_func[N-1] + V_func[N-1]) -1))  
         current = [current1[i] + current2[i] for i in range(len(current1))]
         return potential, current
     ##########################################################################
