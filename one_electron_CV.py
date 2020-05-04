@@ -44,9 +44,9 @@ class OneElectronCV():
         E_func = np.zeros(self.N_max)
         const = -F / (R*self.temperature)
         if self.E_start < self.E_switch: #defines reduction or oxidation first
-            self.direction = -1.
+            self.direction = -1
         else:
-            self.direction = 1.     
+            self.direction = 1     
         delta_theta = self.direction*self.potential_step
         Theta = (self.E_start - delta_theta)          
         for k in range(1, self.N_max + 1): 
