@@ -17,4 +17,5 @@ Files:
 - 1<sup>st</sup> order chemical rate constants = 1/s
 
 
-[1] Oldham
+[1] Oldham, K. B.; Myland, J. C. Modelling cyclic voltammetry without 
+    digital simulation, *Electrochimica Acta*, **56**, 2011, 10612-10625.
