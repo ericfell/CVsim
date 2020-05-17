@@ -1,8 +1,9 @@
 # CVsim
 Semi-analytical method[1] for simulating CVs on a disk macroelectrode, using a semiintegration algorithm.
 
-**Files**
+### Files
 - one_electron_CV.py provides the *OneElectronCV* class for the E<sub>r</sub>, E<sub>q</sub>, and E<sub>q</sub>C schemes
+- two_electron_CV.py provides the *TwoElectronCV* class for the E<sub>q</sub>E<sub>q</sub>, and square schemes
 
 **Input Parameter Units**
 - E<sub>start</sub>/E<sub>switch</sub>/E<sup>o</sup> = V
