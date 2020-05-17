@@ -23,4 +23,4 @@ Semi-analytical method[1] for simulating cyclic voltammograms on a disk macroele
 [1] Oldham, K. B.; Myland, J. C. Modelling cyclic voltammetry without 
     digital simulation, *Electrochimica Acta*, **56**, 2011, 10612-10625.
 
-*to note
+*The schemes for CE<sub>r</sub>, catalytic C'E<sub>q</sub>, and E<sub>r</sub>CE<sub>r</sub> are currently in development
