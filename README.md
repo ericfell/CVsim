@@ -1,5 +1,5 @@
 # CVsim
-Semi-analytical method[1] for simulating cyclic voltammograms on a disk macroelectrode, using a semiintegration algorithm.
+Semi-analytical method<sup>1</sup> for simulating cyclic voltammograms on a disk macroelectrode, using a semiintegration algorithm.
 
 ### Files
 1. one_electron_CV.py provides the *OneElectronCV* class for the E<sub>r</sub> , E<sub>q</sub> , and E<sub>q</sub>C schemes
