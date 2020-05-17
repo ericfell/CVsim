@@ -11,14 +11,19 @@ F = spc.physical_constants['Faraday constant'][0]
 R = spc.R
 
 class TwoElectronCV:
-    """Algorithm Reference:
+    """
+    This is a class to simulate cyclic voltammograms for a disk macroelectrode
+    for two electron processes.
+    
+    Algorithm Reference:
     [1] Oldham, K. B.; Myland, J. C. Modelling cyclic voltammetry without 
     digital simulation, Electrochimica Acta, 56, 2011, 10612-10625. 
     """  
      
     def __init__(self, E_start, E_switch, E_not1, E_not2, scanrate, mV_step, 
                  c_bulk, diff_r, diff_i, diff_p, disk_radius, temperature): 
-        """Parameters to define the CV setup that are shared by all 
+        """
+        Parameters to define the CV setup that are shared by all 
         reaction mechanism functions available for simulation.
         """
         self.E_start = E_start   # starting potential (V)
@@ -37,7 +42,8 @@ class TwoElectronCV:
         self.N_max = int(np.abs(E_switch - E_start)*2 / self.potential_step) #number of points
     ########################################################################## 
     def voltage_profile(self):
-        """Return potential steps for voltage profile and for exponential 
+        """
+        Return potential steps for voltage profile and for exponential 
         Nernstian/Butler-Volmer function.
         """
         potential = np.array([])
@@ -77,9 +83,13 @@ class TwoElectronCV:
     ##########################################################################
     ##########################################################################
     def quasireversible(self, alpha1, alpha2, k_not1, k_not2): 
-        """Return current-potential profile for reversible/quasi-reversible, 
-        two successive one-electron transfers (E_q E_q).
         """
+        Return current-potential profile for reversible/quasi-reversible, 
+        two successive one-electron transfers (E_q E_q). Requires input of 
+        alpha1, alpha2, k_not1 (cm/s), and k_not2 (cm/s).
+        """
+        k_not1 = k_not1 / 100
+        k_not2 = k_not2 / 100
         W_n = self.sum_function()
         potential, E_func1, E_func2 = self.voltage_profile()
         D_const = np.sqrt(self.diff_i / self.delta_t)
@@ -117,10 +127,15 @@ class TwoElectronCV:
     ##########################################################################
     def square_scheme(self, alpha1, alpha2, k_not1, k_not2, k_forward1, 
                       k_backward1, k_forward2, k_backward2): 
-        """Return current-potential profile for two quasi-reversible, 
-        one-electron transfers of  homogeneously interconverting reactants
-        (square scheme). 
         """
+        Return current-potential profile for two quasi-reversible, 
+        one-electron transfers of homogeneously interconverting reactants
+        (square scheme). Requires input of alpha1, alpha2, k_not1 (cm/s), 
+        k_not2 (cm/s), k_forward1 (1/s), k_backward1 (1/s), k_forward2 (1/s), 
+        and k_backward2 (1/s).
+        """
+        k_not1 = k_not1 / 100
+        k_not2 = k_not2 / 100
         W_n = self.sum_function()
         potential, E_func1, E_func2 = self.voltage_profile() 
         k_sum1 = k_forward1 + k_backward1
@@ -175,15 +190,3 @@ class TwoElectronCV:
 ##############################################################################                                          
 if __name__ == '__main__':
     print('testing')        
-        
-                
-                
-        
-        
-
-
-
-
-
-
-
