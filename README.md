@@ -1,10 +1,11 @@
 # CVsim
-Semi-integration method[1] for simulating CVs on a disk macroelectrode
+Semi-analytical method[1] for simulating CVs on a disk macroelectrode, using a semiintegration algorithm.
 
-Files:
+**Files**
+- one_electron_CV.py provides the *OneElectronCV* class for the E<sub>r</sub>, E<sub>q</sub>, and E<sub>q</sub>C schemes
 
 **Input Parameter Units**
-- E<sub>start</sub>/E<sub>reverse</sub>/E<sup>o</sup> = V
+- E<sub>start</sub>/E<sub>switch</sub>/E<sup>o</sup> = V
 - Scanrate = V/s
 - Potential Step = mV
 - Active species concentration = mM (mol/m<sup>3</sup>)
