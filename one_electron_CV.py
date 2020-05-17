@@ -10,16 +10,21 @@ import scipy.constants as spc
 F = spc.physical_constants['Faraday constant'][0]
 R = spc.R
 
-class OneElectronCV():
-    """Algorithm Reference:
+class OneElectronCV:
+    """
+    This is a class to simulate cyclic voltammograms for a disk macroelectrode
+    for one electron processes.
+    
+    Algorithm Reference:
     [1] Oldham, K. B.; Myland, J. C. Modelling cyclic voltammetry without 
     digital simulation, Electrochimica Acta, 56, 2011, 10612-10625. 
     """  
    
     def __init__(self, E_start, E_switch, E_not, scanrate, mV_step, c_bulk, 
                  diff_r, diff_p, disk_radius, temperature):
-        """Parameters to define the CV setup that are shared by all 
-        reaction mechanism functions available for simulation.
+        """
+        Inputs that define the CV setup, and are shared by all reaction
+        mechanism functions available for simulation.
         """
         self.E_start = E_start    # starting potential (V)
         self.E_switch = E_switch  # switching potential (V)
@@ -33,11 +38,12 @@ class OneElectronCV():
         self.D_ratio = np.sqrt(self.diff_r / self.diff_p)
         self.D_const = np.sqrt(self.diff_r / self.delta_t)
         self.area = np.pi*((disk_radius / 1000)**2)  # Electrode area (m^2)         
-        self.temperature = temperature #kelvin
+        self.temperature = temperature  # Kelvin
         self.N_max = int(np.abs(E_switch - E_start)*2 / self.potential_step) #number of points 
     ##########################################################################    
     def voltage_profile(self):
-        """Return potential steps for voltage profile and for exponential 
+        """
+        Return potential steps for voltage profile and for exponential 
         Nernstian/Butler-Volmer function.
         """
         potential = np.array([])
@@ -71,7 +77,8 @@ class OneElectronCV():
     ##########################################################################
     ##########################################################################
     def reversible(self):
-        """Return current-potential profile for reversible (Nernstian), 
+        """
+        Return current-potential profile for reversible (Nernstian), 
         one electron transfer (E_r).
         """
         W_n = self.sum_function()
@@ -89,7 +96,8 @@ class OneElectronCV():
     ##########################################################################
     ##########################################################################
     def quasireversible(self, alpha, k_not):
-        """Return current-potential profile for quasi-reversible, one electron
+        """
+        Return current-potential profile for quasi-reversible, one electron
         transfer (E_q). Requires input of alpha and k_not (cm/s).
         """
         k_not = k_not / 100
@@ -112,7 +120,8 @@ class OneElectronCV():
     ##########################################################################
     ##########################################################################
     def quasireversible_chemical(self, alpha, k_not, k_forward, k_backward):
-        """Return current-potential profile for quasi-reversible, one electron
+        """
+        Return current-potential profile for quasi-reversible, one electron
         transfer followed by homogeneous chemical kinetics (E_q C).
         Requires input of alpha, k_not (cm/s), k_for (1/s), k_back (1/s).
         """
