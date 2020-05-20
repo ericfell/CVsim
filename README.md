@@ -2,7 +2,9 @@
 Semi-analytical method<sup>1</sup> for simulating cyclic voltammograms on a disk macroelectrode, using a semiintegration algorithm.
 
 ### Files
-1. '''one_electron_CV.py''' provides the *OneElectronCV* class for the E<sub>r</sub> , E<sub>q</sub> , and E<sub>q</sub>C schemes
+1. '''
+one_electron_CV.py
+''' provides the *OneElectronCV* class for the E<sub>r</sub> , E<sub>q</sub> , and E<sub>q</sub>C schemes
 2. two_electron_CV.py provides the *TwoElectronCV* class for the E<sub>q</sub>E<sub>q</sub> , and square schemes
 3. test_plots_fits.py provides quick examples of a) plotting 1 or 2 electron schemes, and b) fitting real/simulated data
 
