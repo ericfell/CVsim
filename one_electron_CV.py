@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon May  4 09:26:13 2020
 
-@author: erico
-"""
 import numpy as np
 import scipy.constants as spc
 
@@ -17,7 +12,8 @@ class OneElectronCV:
     
     Algorithm Reference:
     [1] Oldham, K. B.; Myland, J. C. Modelling cyclic voltammetry without 
-    digital simulation, Electrochimica Acta, 56, 2011, 10612-10625. 
+    digital simulation, Electrochimica Acta, 56, 2011, 10612-10625.
+    
     """  
    
     def __init__(self, E_start, E_switch, E_not, scanrate, mV_step, c_bulk, 
@@ -25,31 +21,68 @@ class OneElectronCV:
         """
         Inputs that define the CV setup, and are shared by all reaction
         mechanism functions available for simulation.
+        
+        Parameters
+        ----------
+        E_start : float
+            Starting potential of scan (volts)
+        E_switch : float
+            Switching potential of scan (volts)
+        E_not : float
+            Standard reduction potential (volts)
+        scanrate : float
+            Potential sweep rate (volts / second)
+        mV_step : float
+            Potential increment of scan (millivolts)
+        c_bulk  : float
+            Bulk concentration of redox species (mM or mol/m^3) 
+        diff_r : float
+            Diffusion coefficient of reactant (cm^2/s) 
+        diff_p : float
+            Diffusion coefficient of product (cm^2/s)
+        disk_radius : float
+            Radius of disk macroelectrode (mm)
+        temperature : float
+            Temperature (kelvin)
+            
         """
-        self.E_start = E_start    # starting potential (V)
-        self.E_switch = E_switch  # switching potential (V)
-        self.E_not = E_not        # standard reduction potential (V)
-        self.scanrate = scanrate  # scanrate (V/s) 
-        self.potential_step = (mV_step / 1000)  # potential step (V)   
-        self.delta_t = (self.potential_step / self.scanrate) # time step (s)
-        self.c_bulk = c_bulk   # bulk [reactant] (mM or mol/m^3) 
-        self.diff_r = (diff_r / 1e4)  # D coefficient of reactant (m^2/s) 
-        self.diff_p = (diff_p / 1e4)  # D coefficient of product (m^2/s) 
+        self.E_start = E_start    
+        self.E_switch = E_switch  
+        self.E_not = E_not        
+        self.scanrate = scanrate  
+        self.potential_step = (mV_step / 1000)     
+        self.delta_t = (self.potential_step / self.scanrate) 
+        self.c_bulk = c_bulk   
+        self.diff_r = (diff_r / 1e4)   
+        self.diff_p = (diff_p / 1e4)   
         self.D_ratio = np.sqrt(self.diff_r / self.diff_p)
         self.D_const = np.sqrt(self.diff_r / self.delta_t)
-        self.area = np.pi*((disk_radius / 1000)**2)  # Electrode area (m^2)         
-        self.temperature = temperature  # Kelvin
-        self.N_max = int(np.abs(E_switch - E_start)*2 / self.potential_step) #number of points 
+        self.area = np.pi*((disk_radius / 1000)**2)           
+        self.temperature = temperature  
+        self.N_max = int(np.abs(E_switch - E_start)*2 / self.potential_step) 
     ##########################################################################    
     def voltage_profile(self):
         """
         Return potential steps for voltage profile and for exponential 
         Nernstian/Butler-Volmer function.
+        
+        Parameters
+        ----------
+        self
+        
+        Returns
+        -------
+        potential: np.array
+            Array of potential values in full CV sweep
+        E_func : np.array 
+            Array of values from exponential potential equation
+            
         """
         potential = np.array([])
         E_func = np.zeros(self.N_max)
         const = -F / (R*self.temperature)
-        if self.E_start < self.E_switch: #defines reduction or oxidation first
+        #define reduction or oxidation first
+        if self.E_start < self.E_switch: 
             self.direction = -1
         else:
             self.direction = 1     
@@ -69,7 +102,18 @@ class OneElectronCV:
         return potential, E_func    
     ########################################################################## 
     def sum_function(self): 
-        """Return weighting factors for semi-integration method."""
+        """Return weighting factors for semi-integration method.
+        
+        Parameters
+        ----------
+        self
+        
+        Returns
+        -------
+        W_n: np.array
+            Array of weighting factor
+        
+        """
         W_n = np.ones(self.N_max)
         for i in range(1, self.N_max):
             W_n[i] = (2*i - 1)*( W_n[i-1] / (2*i))      
@@ -80,6 +124,18 @@ class OneElectronCV:
         """
         Return current-potential profile for reversible (Nernstian), 
         one electron transfer (E_r).
+        
+        Parameters
+        ----------
+        self
+        
+        Returns
+        -------
+        potential: np.array
+            Array of potential values in full CV sweep
+        current: np.array
+            Array of current values in full CV sweep
+            
         """
         W_n = self.sum_function()
         potential, E_func = self.voltage_profile()
@@ -98,7 +154,23 @@ class OneElectronCV:
     def quasireversible(self, alpha, k_not):
         """
         Return current-potential profile for quasi-reversible, one electron
-        transfer (E_q). Requires input of alpha and k_not (cm/s).
+        transfer (E_q). 
+        
+        Parameters
+        ----------
+        self
+        alpha : float
+            Charge transfer coefficient
+        k_not : float
+            Standard rate constant (cm/s)
+        
+        Returns
+        -------
+        potential: np.array
+            Array of potential values in full CV sweep
+        current: np.array
+            Array of current values in full CV sweep
+            
         """
         k_not = k_not / 100
         W_n = self.sum_function()
@@ -123,7 +195,26 @@ class OneElectronCV:
         """
         Return current-potential profile for quasi-reversible, one electron
         transfer followed by homogeneous chemical kinetics (E_q C).
-        Requires input of alpha, k_not (cm/s), k_for (1/s), k_back (1/s).
+        
+        Parameters
+        ----------
+        self
+        alpha : float
+            Charge transfer coefficient
+        k_not : float
+            Standard rate constant (cm/s)
+        k_forward : float
+            First order chemical rate constant (1/s)
+        k_backward : float
+            First order chemical rate constant (1/s)
+            
+        Returns
+        -------
+        potential: np.array
+            Array of potential values in full CV sweep
+        current: np.array
+            Array of current values in full CV sweep
+            
         """
         k_not = k_not / 100
         k_sum = k_forward + k_backward
