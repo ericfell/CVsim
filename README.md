@@ -17,7 +17,7 @@ Semi-analytical method<sup>1</sup> for simulating cyclic voltammograms on a disk
 
 **and if needed**
 - Standard rate constant, k<sub>o</sub> = cm/s
-- 1<sup>st</sup> order chemical rate constants (k<sub>forward</sub>, k<sub>backward</sub>) = 1/s
+- 1<sup>st</sup> order chemical rate constants (k<sub>forward</sub>, k<sub>backward</sub>) = s<sup>-1</sup>/
 
 
 
