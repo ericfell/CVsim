@@ -5,6 +5,7 @@ Semi-analytical method<sup>1</sup> for simulating cyclic voltammograms on a disk
 1. `one_electron_CV.py` provides the *OneElectronCV* class for the E<sub>r</sub> , E<sub>q</sub> , and E<sub>q</sub>C schemes
 2. `two_electron_CV.py` provides the *TwoElectronCV* class for the E<sub>q</sub>E<sub>q</sub> , and square schemes
 3. `test_plots_fits.py` provides quick examples of a) calling the *OneElectronCV* or *TwoElectronCV* class to simulate and plot mechanistic schemes, and b) fitting real/simulated data (likely a few ways to do this, some more forgiving than others)
+4. `one_electron_multiscan.py` provides the *OneElectronCV_multi* class which enables multiple-scan simulation (pseudo steady state) of schemes contained in *OneElectronCV*
 
 **Input Parameter Units**
 - E<sub>start</sub>/E<sub>switch</sub>/E<sup>o</sup> = V
