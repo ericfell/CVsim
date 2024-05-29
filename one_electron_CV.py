@@ -11,24 +11,27 @@ F = spc.value('Faraday constant')
 # Molar gas constant (J/K/mol)
 R = spc.R
 
+# TO-DO
+# do we need numpy arrays or just lists?
+
 
 class OneElectronCV:
     """
-    Simulate cyclic voltammograms for a disk macro-electrode
-    for one electron processes.
+    Simulate cyclic voltammograms for one electron processes
+    on a disk macro-electrode.
 
     Parameters
     ----------
     start_potential : float
-        Starting potential of scan (volts).
+        Starting potential of scan (V vs. reference).
     switch_potential : float
-        Switching potential of scan (volts).
+        Switching potential of scan (V vs. reference).
     formal_potential : float
-        Standard reduction potential (volts).
+        Formal reduction potential (V vs. reference).
     scan_rate : float
-        Potential sweep rate (volts / second).
+        Potential sweep rate (V/s).
     step_size : float
-        Voltage increment size during CV scan (milli-volts).
+        Voltage increment during CV scan (mV).
     c_bulk : float
         Bulk concentration of redox species (mM or mol/m^3).
     diffusion_reactant : float
@@ -36,7 +39,7 @@ class OneElectronCV:
     diffusion_product : float
         Diffusion coefficient of product (cm^2/s).
     disk_radius : float
-        Radius of disk macroelectrode (mm).
+        Radius of disk macro-electrode (mm).
     temperature : float
         Temperature (kelvin).
 
@@ -66,56 +69,57 @@ class OneElectronCV:
         self.switch_potential = switch_potential
         self.formal_potential = formal_potential
         self.scan_rate = scan_rate
-        self.step_size = step_size / 1000
+        self.step_size = step_size / 1000  # mV to V
         self.delta_t = self.step_size / self.scan_rate
         self.c_bulk = c_bulk
         self.diffusion_ratio = (diffusion_reactant / diffusion_product) ** 0.5
         self.velocity_constant = (diffusion_reactant / self.delta_t) ** 0.5
-        self.area = np.pi * (disk_radius / 1000)**2
+        self.area = np.pi * (disk_radius / 1000)**2  # mm to cm, then cm^2
         self.temperature = temperature
-        self.N_max = int((abs(switch_potential - start_potential) * 2) / self.step_size)
+        self.n_max = int((abs(switch_potential - start_potential) * 2) / self.step_size)
         self.scan_direction = -1 if self.start_potential < self.switch_potential else 1
         self.nernst_constant = -F / (R * self.temperature)
         self.cv_constant = -F * self.scan_direction * self.area * self.c_bulk * self.velocity_constant
 
-    def voltage_profile(self) -> tuple[np.ndarray, np.ndarray]:
+    def _voltage_profile(self) -> tuple[np.ndarray, np.ndarray]:
         """
-        Return potential steps for voltage profile and for exponential 
-        Nernstian/Butler-Volmer function.
+        Return potential steps for voltage profile and for exponential Nernstian/Butler-Volmer function.
+        This is equation (6:1) from [1].
 
         Returns
         -------
         potential : np.ndarray
             Potential values in a full CV sweep.
         xi_function : np.ndarray
-            Array of values from exponential potential equation.
+            Values from exponential potential equation.
             
         """
         potential = np.array([])
-        #potential = np.zeros(self.N_max)
-        xi_function = np.zeros(self.N_max)
+        #potential = np.zeros(self.n_max)
+        xi_function = np.zeros(self.n_max)
 
         delta_theta = self.scan_direction * self.step_size
         theta = self.start_potential - delta_theta
         #potential[0] = theta ##
-        for k in range(1, self.N_max + 1):
+        for k in range(1, self.n_max + 1):
             potential = np.append(potential, theta)
             #potential[k] = theta
             # exponential potential function
             xi_function[k - 1] = np.exp(self.nernst_constant * self.scan_direction
-                                        * (self.switch_potential + self.scan_direction * abs((k * self.step_size)
-                                                                                             + self.scan_direction
-                                                                                             * (self.switch_potential - self.start_potential))
+                                        * (self.switch_potential
+                                           + self.scan_direction * abs((k * self.step_size) + self.scan_direction
+                                                                       * (self.switch_potential - self.start_potential))
                                            - self.formal_potential))
-            if k < (int(self.N_max / 2)):
+            if k < (int(self.n_max / 2)):
                 theta -= delta_theta
             else:
                 theta += delta_theta
         return potential, xi_function
 
-    def semi_integrate_weights(self) -> np.ndarray:
+    def _semi_integrate_weights(self) -> np.ndarray:
         """
         Weighting factors for semi-integration method.
+        This is equation (5:5) from [1].
 
         Returns
         -------
@@ -124,90 +128,91 @@ class OneElectronCV:
         
         """
 
-        weights = np.ones(self.N_max)
-        for i in range(1, self.N_max):
-            weights[i] = (2 * i - 1) * (weights[i - 1] / (2 * i))
+        weights = np.ones(self.n_max)
+        for n in range(1, self.n_max):
+            weights[n] = (2 * n - 1) * (weights[n - 1] / (2 * n))
         return weights
 
-    def reversible(self) -> tuple[np.ndarray, np.ndarray]:  # reversible_mechanism
+    def reversible(self) -> tuple[np.ndarray, np.ndarray]:
         """
-        Current-potential profile for reversible (Nernstian)
-        one electron transfer (E_r).
+        Current-potential profile for reversible (Nernstian) one electron transfer (E_r) mechanism.
+        This is equation (7:7) from [1].
         
         Returns
         -------
-        potential: np.ndarray
-            Array of potential values in full CV sweep.
-        current: np.ndarray
-            Array of current values in full CV sweep.
+        potential : np.ndarray
+            Potential values in full CV sweep.
+        current : np.ndarray
+            Current values in full CV sweep.
             
         """
-        weights = self.semi_integrate_weights()
-        potential, xi_function = self.voltage_profile()
-        current = np.zeros(self.N_max)
-        for N in range(1, self.N_max + 1):
-            if N == 1:
-                current[N - 1] = (self.cv_constant / (1 + (self.diffusion_ratio / xi_function[N - 1])))
+        weights = self._semi_integrate_weights()
+        potential, xi_function = self._voltage_profile()
+        current = np.zeros(self.n_max)
+        for n in range(1, self.n_max + 1):  # TO-DO refactor
+            if n == 1:
+                current[n - 1] = self.cv_constant / (1 + (self.diffusion_ratio / xi_function[n - 1]))
             else:
-                summ = sum(weights[k] * current[N - k - 1] for k in range(1, N))
-                current[N - 1] = ((self.cv_constant / (1 + (self.diffusion_ratio / xi_function[N - 1])))
-                                  - summ)
+                sum_weights = sum(weights[k] * current[n - k - 1] for k in range(1, n))
+                current[n - 1] = ((self.cv_constant / (1 + (self.diffusion_ratio / xi_function[n - 1])))
+                                  - sum_weights)
         return potential, current
 
-    def quasireversible(self, alpha: float, k_not: float) -> tuple[np.ndarray, np.ndarray]:  # e_mechanism
+    def quasireversible(self, alpha: float, k_0: float) -> tuple[np.ndarray, np.ndarray]:
         """
-        Current-potential profile for quasi-reversible one electron
-        transfer (E_q). 
+        Current-potential profile for quasi-reversible one electron transfer (E_q) mechanism.
+        This is equation (8:3) from [1].
         
         Parameters
         ----------
         alpha : float
-            Charge transfer coefficient (unit-less).
-        k_not : float
+            Charge transfer coefficient (no units).
+        k_0 : float
             Standard electrochemical rate constant (cm/s).
         
         Returns
         -------
-        potential: np.ndarray
-            Array of potential values in full CV sweep.
-        current: np.ndarray
-            Array of current values in full CV sweep.
+        potential : np.ndarray
+            Potential values in full CV sweep.
+        current : np.ndarray
+            Current values in full CV sweep.
             
         """
 
-        k_not = k_not / 100
-        weights = self.semi_integrate_weights()
-        potential, xi_function = self.voltage_profile()
-        current = np.zeros(self.N_max)
-        for N in range(1, self.N_max + 1):
+        k_0 = k_0 / 100  # cm/s to m/s
+        weights = self._semi_integrate_weights()
+        potential, xi_function = self._voltage_profile()
+        current = np.zeros(self.n_max)
+        for N in range(1, self.n_max + 1):  # TO-DO refactor
             if N == 1:
                 current[N - 1] = (self.cv_constant / (1 + (self.diffusion_ratio / xi_function[N - 1])
                                                       + (self.velocity_constant / (np.power(xi_function[N - 1], alpha)
-                                                                                   * k_not))))
+                                                                                   * k_0))))
             else:
-                summ = sum(weights[k] * current[N - k - 1] for k in range(1, N))
+                sum_weights = sum(weights[k] * current[N - k - 1] for k in range(1, N))
                 current[N - 1] = ((self.cv_constant - (1 + (self.diffusion_ratio / xi_function[N - 1]))
-                                   * summ) / (1 + (self.diffusion_ratio / xi_function[N - 1])
+                                   * sum_weights) / (1 + (self.diffusion_ratio / xi_function[N - 1])
                                               + (self.velocity_constant / (np.power(xi_function[N - 1], alpha)
-                                                                           * k_not))))
+                                                                           * k_0))))
         return potential, current
 
     def quasireversible_chemical(
             self,
             alpha: float,
-            k_not: float,
+            k_0: float,
             k_forward: float,
             k_backward: float,
-    ) -> tuple[np.ndarray, np.ndarray]:  # ec_mechanism
+    ) -> tuple[np.ndarray, np.ndarray]:
         """
-        Current-potential profile for quasi-reversible, one electron
-        transfer followed by homogeneous chemical kinetics (E_q C).
+        Current-potential profile for quasi-reversible one electron transfer followed by homogeneous chemical
+        kinetics (E_q C) mechanism.
+        This is equation (10:4) from [1].
         
         Parameters
         ----------
         alpha : float
-            Charge transfer coefficient (unit-less).
-        k_not : float
+            Charge transfer coefficient (no units).
+        k_0 : float
             Standard electrochemical rate constant (cm/s).
         k_forward : float
             First order chemical rate constant (1/s).
@@ -216,48 +221,40 @@ class OneElectronCV:
             
         Returns
         -------
-        potential: np.ndarray
-            Array of potential values in full CV sweep.
-        current: np.ndarray
-            Array of current values in full CV sweep.
+        potential : np.ndarray
+            Potential values in full CV sweep.
+        current : np.ndarray
+            Current values in full CV sweep.
             
         """
-        k_not = k_not / 100
+
+        k_0 = k_0 / 100  # cm/s to m/s
         k_sum = k_forward + k_backward
-        eqlbm_const = k_forward / k_backward
-        weights = self.semi_integrate_weights()
-        potential, xi_function = self.voltage_profile()
-        current = np.zeros(self.N_max)
-        for N in range(1, self.N_max + 1):
-            if N == 1:
-                current[N - 1] = (self.cv_constant / (1 + (self.velocity_constant
-                                                           / (np.power(xi_function[N - 1], alpha) * k_not))
-                                                      + (self.diffusion_ratio / xi_function[N - 1])))
+        k_const = k_forward / k_backward
+        weights = self._semi_integrate_weights()
+        potential, xi_function = self._voltage_profile()
+        current = np.zeros(self.n_max)
+        for n in range(1, self.n_max + 1):  # TO-DO refactor
+            if n == 1:
+                current[n - 1] = (self.cv_constant / (1 + (self.velocity_constant
+                                                           / (np.power(xi_function[n - 1], alpha) * k_0))
+                                                      + (self.diffusion_ratio / xi_function[n - 1])))
             else:
-                summ = sum(weights[k] * current[N - k - 1] for k in range(1, N))
-                summ_exp = sum((weights[k] * current[N - k - 1] * np.exp((-k - 1) * k_sum))
-                               for k in range(1, N))
-                current[N - 1] = ((self.cv_constant - ((1 + (self.diffusion_ratio / ((1 + eqlbm_const)
-                                                                                     * xi_function[N - 1]))) * summ) - (
-                                               ((eqlbm_const * self.diffusion_ratio)
-                                                / (xi_function[N - 1] * (1 + eqlbm_const))) * summ_exp)) / (1
-                                                                                                       + (
-                                                                                                                                                 self.velocity_constant / (
-                                                                                                                       np.power(
-                                                                                                                           xi_function[
-                                                                                                                               N - 1],
-                                                                                                                           alpha)
-                                                                                                                       * k_not)) + (
-                                                                                                               self.diffusion_ratio /
-                                                                                                               xi_function[
-                                                                                                                       N - 1])))
+                sum_weights = sum(weights[k] * current[n - k - 1] for k in range(1, n))
+                sum_exp_weights = sum((weights[k] * current[n - k - 1] * np.exp((-k - 1) * k_sum)) for k in range(1, n))
+                current[n - 1] = (self.cv_constant
+                                  - ((1 + (self.diffusion_ratio / ((1 + k_const) * xi_function[n - 1]))) * sum_weights)
+                                  - (((k_const * self.diffusion_ratio) / (xi_function[n - 1] * (1 + k_const)))
+                                     * sum_exp_weights)
+                                  ) / (1 + (self.velocity_constant / (np.power(xi_function[n - 1], alpha) * k_0))
+                                       + (self.diffusion_ratio / xi_function[n - 1]))
         return potential, current
 
-if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    print('testing')
-    test1 = OneElectronCV(0.3, -0.3, 0, 0.1, 1, 5, 1.5e-6, 1.1e-6, 5, 298)
-    potential, current = test1.reversible()#.quasireversible(0.5, 5e-2)
-    plt.figure()
-    plt.plot(potential, [x * 1000 for x in current], label='experiment')
-    plt.show()
+# if __name__ == '__main__':
+#     import matplotlib.pyplot as plt
+#     print('testing')
+#     test1 = OneElectronCV(0.3, -0.3, 0, 0.1, 1, 5, 1.5e-6, 1.1e-6, 5, 298)
+#     potential, current = test1.reversible()#.quasireversible(0.5, 5e-2)
+#     plt.figure()
+#     plt.plot(potential, [x * 1000 for x in current], label='experiment')
+#     plt.show()
