@@ -73,13 +73,14 @@ class OneElectronCV:
         self.delta_t = self.step_size / self.scan_rate
         self.c_bulk = c_bulk
         self.diffusion_ratio = (diffusion_reactant / diffusion_product) ** 0.5
-        self.velocity_constant = (diffusion_reactant / self.delta_t) ** 0.5
-        self.area = np.pi * (disk_radius / 1000)**2  # mm to cm, then cm^2
+        self.velocity_constant = ((diffusion_reactant / 1e4) / self.delta_t) ** 0.5  # cm^2/s to m^2/s
+        self.area = np.pi * (disk_radius / 1000)**2  # mm to m, then m^2
         self.temperature = temperature
         self.n_max = int((abs(switch_potential - start_potential) * 2) / self.step_size)
         self.scan_direction = -1 if self.start_potential < self.switch_potential else 1
         self.nernst_constant = -F / (R * self.temperature)
         self.cv_constant = -F * self.scan_direction * self.area * self.c_bulk * self.velocity_constant
+        self.delta_theta = self.scan_direction * self.step_size
 
     def _voltage_profile(self) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -94,13 +95,11 @@ class OneElectronCV:
             Values from exponential potential equation.
             
         """
-        potential = np.array([])
-        #potential = np.zeros(self.n_max)
-        xi_function = np.zeros(self.n_max)
 
-        delta_theta = self.scan_direction * self.step_size
-        theta = self.start_potential - delta_theta
-        #potential[0] = theta ##
+        theta = self.start_potential - self.delta_theta
+
+        potential = np.array([])
+        xi_function = np.zeros(self.n_max)
         for k in range(1, self.n_max + 1):
             potential = np.append(potential, theta)
             #potential[k] = theta
@@ -111,9 +110,15 @@ class OneElectronCV:
                                                                        * (self.switch_potential - self.start_potential))
                                            - self.formal_potential))
             if k < (int(self.n_max / 2)):
-                theta -= delta_theta
+                theta -= self.delta_theta
             else:
-                theta += delta_theta
+                theta += self.delta_theta
+
+        # testing lists only (limited numpy)
+        #
+        # potential = [0.0] * self.n_max
+        # potential[0] = theta
+
         return potential, xi_function
 
     def _semi_integrate_weights(self) -> np.ndarray:
@@ -250,11 +255,14 @@ class OneElectronCV:
                                        + (self.diffusion_ratio / xi_function[n - 1]))
         return potential, current
 
-# if __name__ == '__main__':
-#     import matplotlib.pyplot as plt
-#     print('testing')
-#     test1 = OneElectronCV(0.3, -0.3, 0, 0.1, 1, 5, 1.5e-6, 1.1e-6, 5, 298)
-#     potential, current = test1.reversible()#.quasireversible(0.5, 5e-2)
-#     plt.figure()
-#     plt.plot(potential, [x * 1000 for x in current], label='experiment')
-#     plt.show()
+
+if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+    print('testing')
+    test1 = OneElectronCV(-0.3, 0.3, 0, 1.0, 1, 1, 1e-5, 1e-5, 5.642, 298)
+    potential, current = test1.reversible()#.quasireversible(0.5, 5e-2)
+    peak_idx = np.argmax(current)
+    print(f"peak potential: {potential[peak_idx]:.4f} V vs SHE , peak current {current[peak_idx]*1000:.6f} mA")
+    plt.figure()
+    plt.plot(potential, current, label='experiment')
+    plt.show()
