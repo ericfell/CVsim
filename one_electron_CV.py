@@ -40,8 +40,10 @@ class OneElectronCV:
         Diffusion coefficient of product (cm^2/s).
     disk_radius : float
         Radius of disk macro-electrode (mm).
+        Default is 1.5 mm, a typical working electrode.
     temperature : float
-        Temperature (kelvin).
+        Temperature (K).
+        Default is 298 K (25C).
 
     Notes
     -----
@@ -62,7 +64,7 @@ class OneElectronCV:
             c_bulk: float,
             diffusion_reactant: float,
             diffusion_product: float,
-            disk_radius: float,
+            disk_radius: float = 1.5,
             temperature: float = 298.0,
     ) -> None:
         self.start_potential = start_potential
@@ -190,9 +192,9 @@ class OneElectronCV:
         current = np.zeros(self.n_max)
         for N in range(1, self.n_max + 1):  # TO-DO refactor
             if N == 1:
-                current[N - 1] = (self.cv_constant / (1 + (self.diffusion_ratio / xi_function[N - 1])
-                                                      + (self.velocity_constant / (np.power(xi_function[N - 1], alpha)
-                                                                                   * k_0))))
+                current[N - 1] = self.cv_constant / (1 + (self.diffusion_ratio / xi_function[N - 1])
+                                                     + (self.velocity_constant / (np.power(xi_function[N - 1], alpha)
+                                                                                  * k_0)))
             else:
                 sum_weights = sum(weights[k] * current[N - k - 1] for k in range(1, N))
                 current[N - 1] = ((self.cv_constant - (1 + (self.diffusion_ratio / xi_function[N - 1]))
@@ -259,7 +261,7 @@ class OneElectronCV:
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     print('testing')
-    test1 = OneElectronCV(-0.3, 0.3, 0, 1.0, 1, 1, 1e-5, 1e-5, 5.642, 298)
+    test1 = OneElectronCV(-0.3, 0.3, 0, 1.0, 0.5, 1, 1e-5, 1e-5, 5.642, 298)
     potential, current = test1.reversible()#.quasireversible(0.5, 5e-2)
     peak_idx = np.argmax(current)
     print(f"peak potential: {potential[peak_idx]:.4f} V vs SHE , peak current {current[peak_idx]*1000:.6f} mA")
