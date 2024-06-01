@@ -325,6 +325,117 @@ class E_quasirev(CyclicVoltammetryProtocol):
         return potential, current
 
 
+class E_quasirevC(CyclicVoltammetryProtocol):
+    """
+    Provides a current-potential profile for a quasi-reversible one electron transfer, followed by a reversible first
+    order homogeneous chemical transformation mechanism.
+    This is equation (10:4) from [1].
+
+    Parameters
+    ----------
+    start_potential : float
+        Starting potential of scan (V vs. reference).
+    switch_potential : float
+        Switching potential of scan (V vs. reference).
+    formal_potential : float
+        Formal reduction potential (V vs. reference).
+    scan_rate : float
+        Potential sweep rate (V/s).
+    c_bulk : float
+        Bulk concentration of redox species (mM or mol/m^3).
+    diffusion_reactant : float
+        Diffusion coefficient of reactant (cm^2/s).
+    diffusion_product : float
+        Diffusion coefficient of product (cm^2/s).
+    alpha : float
+        Charge transfer coefficient (no units).
+    k_0 : float
+        Standard electrochemical rate constant (cm/s).
+    k_forward : float
+        First order forward chemical rate constant (1/s).
+    k_backward : float
+        First order backward chemical rate constant (1/s).
+    step_size : float
+        Voltage increment during CV scan (mV).
+        Default is 1.0 mV, a typical potentiostat default.
+    disk_radius : float
+        Radius of disk macro-electrode (mm).
+        Default is 1.5 mm, a typical working electrode.
+    temperature : float
+        Temperature (K).
+        Default is 298 K (25C).
+
+    """
+
+    def __init__(
+            self,
+            start_potential: float,
+            switch_potential: float,
+            formal_potential: float,
+            scan_rate: float,
+            c_bulk: float,
+            diffusion_reactant: float,
+            diffusion_product: float,
+            alpha: float,
+            k_0: float,
+            k_forward: float,
+            k_backward: float,
+            step_size: float = 1.0,
+            disk_radius: float = 1.5,
+            temperature: float = 298.0,
+    ) -> None:
+        super().__init__(
+            start_potential,
+            switch_potential,
+            formal_potential,
+            scan_rate,
+            c_bulk,
+            diffusion_reactant,
+            diffusion_product,
+            step_size,
+            disk_radius,
+            temperature)
+        self.alpha = alpha
+        self.k_0 = k_0
+        self.k_forward = k_forward
+        self.k_backward = k_backward
+
+    def mechanism(self) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Simulates the CV for a quasi-reversible one electron transfer followed by a reversible first order homogeneous
+        chemical transformation mechanism.
+
+        Returns
+        -------
+        potential : np.ndarray
+            Potential values in full CV sweep.
+        current : np.ndarray
+            Current values in full CV sweep.
+
+        """
+
+        k_sum = self.k_forward + self.k_backward
+        k_const = self.k_forward / self.k_backward
+        weights = self._semi_integrate_weights()
+        potential, xi_function = self.voltage_profile_one_electron()
+        current = np.zeros(self.n_max)
+        for n in range(1, self.n_max + 1):  # TO-DO refactor
+            if n == 1:
+                current[n - 1] = (self.cv_constant / (1 + (self.velocity_constant
+                                                           / (np.power(xi_function[n - 1], self.alpha) * (self.k_0 / 100)))
+                                                      + (self.diffusion_ratio / xi_function[n - 1])))
+            else:
+                sum_weights = sum(weights[k] * current[n - k - 1] for k in range(1, n))
+                sum_exp_weights = sum((weights[k] * current[n - k - 1] * np.exp((-k - 1) * k_sum)) for k in range(1, n))
+                current[n - 1] = (self.cv_constant
+                                  - ((1 + (self.diffusion_ratio / ((1 + k_const) * xi_function[n - 1]))) * sum_weights)
+                                  - (((k_const * self.diffusion_ratio) / (xi_function[n - 1] * (1 + k_const)))
+                                     * sum_exp_weights)
+                                  ) / (1 + (self.velocity_constant / (np.power(xi_function[n - 1], self.alpha) * (self.k_0 / 100)))
+                                       + (self.diffusion_ratio / xi_function[n - 1]))
+        return potential, current
+
+
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     print('testing')
