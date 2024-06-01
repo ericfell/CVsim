@@ -4,6 +4,7 @@ of one- and two-electron processes.
 """
 
 from abc import ABC, abstractmethod
+from typing import Optional
 import numpy as np
 import scipy.constants as spc
 
@@ -83,7 +84,7 @@ class CyclicVoltammetryProtocol(ABC):
         self.cv_constant = -F * self.scan_direction * self.area * self.c_bulk * self.velocity_constant
         self.delta_theta = self.scan_direction * self.step_size
 
-    def voltage_profile_one_electron(self) -> tuple[np.ndarray, np.ndarray]:
+    def voltage_profile_one_electron(self, first_redox: float, second_redox: Optional[float] = None) -> tuple[np.ndarray, list]:
         """
         Return potential steps for voltage profile and for exponential Nernstian/Butler-Volmer function.
         This is equation (6:1) from [1].
@@ -97,28 +98,38 @@ class CyclicVoltammetryProtocol(ABC):
 
         """
 
-        theta = self.start_potential - self.delta_theta
+        electron_transfers = [first_redox]
+        if second_redox is not None:
+            electron_transfers.append(second_redox)
 
-        potential = np.array([])
-        xi_function = np.zeros(self.n_max)
-        for k in range(1, self.n_max + 1):
-            potential = np.append(potential, theta)
-            xi_function[k - 1] = np.exp(self.nernst_constant * self.scan_direction
-                                        * (self.switch_potential
-                                           + self.scan_direction * abs((k * self.step_size) + self.scan_direction
-                                                                       * (self.switch_potential - self.start_potential))
-                                           - self.formal_potential))
-            if k < (int(self.n_max / 2)):
-                theta -= self.delta_theta
-            else:
-                theta += self.delta_theta
+        #potential = np.array([])
+        # put all in for loop, return list that has 1 or 2 lists in it
+        all_xi_functions = []
+        for redox_potential in electron_transfers:
+            potential = np.array([])
+            theta = self.start_potential - self.delta_theta
+            xi_function = np.zeros(self.n_max)
+            for k in range(1, self.n_max + 1):
+                potential = np.append(potential, theta)
+                xi_function[k - 1] = np.exp(self.nernst_constant * self.scan_direction
+                                            * (self.switch_potential
+                                               + self.scan_direction * abs((k * self.step_size) + self.scan_direction
+                                                                           * (self.switch_potential - self.start_potential))
+                                               - redox_potential))
+                if k < (int(self.n_max / 2)):
+                    theta -= self.delta_theta
+                else:
+                    theta += self.delta_theta
+
+            all_xi_functions.append(xi_function)
 
         # testing lists only (limited numpy)
         #
         # potential = [0.0] * self.n_max
         # potential[0] = theta
 
-        return potential, xi_function
+        #return potential, xi_function
+        return potential, all_xi_functions
 
     def voltage_profile_two_electrons(self) -> tuple[np.ndarray, np.ndarray]:
         raise NotImplementedError
@@ -217,7 +228,8 @@ class E_rev(CyclicVoltammetryProtocol):
 
         """
         weights = self._semi_integrate_weights()
-        potential, xi_function = self.voltage_profile_one_electron()
+        potential, xi_function = self.voltage_profile_one_electron(self.formal_potential)
+        xi_function = xi_function[0]
         current = np.zeros(self.n_max)
         for n in range(1, self.n_max + 1):  # TO-DO refactor
             if n == 1:
@@ -439,7 +451,7 @@ class E_quasirevC(CyclicVoltammetryProtocol):
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
     print('testing')
-    test1 = E_rev(-0.3, 0.3, 0, 1.0, 0.5, 1, 1e-5, 1e-5, disk_radius=5.642)
+    test1 = E_rev(-0.3, 0.3, 0, 1.0, 1.0, 1e-5, 1e-5, disk_radius=5.642)
     v, i = test1.mechanism()
     peak_idx = np.argmax(i)
     print(f"peak potential: {v[peak_idx]:.4f} V vs SHE , peak current {i[peak_idx]*1000:.6f} mA")
