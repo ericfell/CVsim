@@ -22,11 +22,11 @@ class CyclicVoltammetryProtocol(ABC):
     Parameters
     ----------
     start_potential : float
-        Starting potential of scan (V vs. reference).
+        Starting potential of scan (V vs reference).
     switch_potential : float
-        Switching potential of scan (V vs. reference).
+        Switching potential of scan (V vs reference).
     formal_potential : float
-        Formal reduction potential (V vs. reference).
+        Formal reduction potential (V vs reference).
     scan_rate : float
         Potential sweep rate (V/s).
     c_bulk : float
@@ -49,8 +49,8 @@ class CyclicVoltammetryProtocol(ABC):
     -----
 
     Algorithm Reference:
-    [1] Oldham, K. B.; Myland, J. C. Modelling cyclic voltammetry without
-    digital simulation, Electrochimica Acta, 56, 2011, 10612-10625.
+    [1] Oldham, K. B.; Myland, J. C. "Modelling cyclic voltammetry without
+    digital simulation." Electrochimica Acta, 56, 2011, 10612-10625.
 
     """
 
@@ -70,26 +70,31 @@ class CyclicVoltammetryProtocol(ABC):
         self.start_potential = start_potential
         self.switch_potential = switch_potential
         self.formal_potential = formal_potential
-        self.scan_rate = scan_rate
         self.step_size = step_size / 1000  # mV to V
-        self.delta_t = self.step_size / self.scan_rate
-        self.c_bulk = c_bulk
+        self.delta_t = self.step_size / scan_rate
         self.diffusion_reactant = diffusion_reactant / 1e4  # cm^2/s to m^2/s
         self.diffusion_product = diffusion_product / 1e4  # cm^2/s to m^2/s
-        self.diffusion_ratio = (diffusion_reactant / diffusion_product) ** 0.5
-        self.velocity_constant = (self.diffusion_reactant / self.delta_t) ** 0.5  # cm^2/s to m^2/s
-        self.area = np.pi * (disk_radius / 1000)**2  # mm to m, then m^2
-        self.temperature = temperature
+        self.diffusion_ratio = (self.diffusion_reactant / self.diffusion_product) ** 0.5
+        self.velocity_constant = (self.diffusion_reactant / self.delta_t) ** 0.5
+        self.electrode_area = np.pi * (disk_radius / 1000) ** 2  # mm to m, then m^2
         self.n_max = int((abs(switch_potential - start_potential) * 2) / self.step_size)
         self.scan_direction = -1 if self.start_potential < self.switch_potential else 1
-        self.nernst_constant = -F / (R * self.temperature)
-        self.cv_constant = -F * self.scan_direction * self.area * self.c_bulk * self.velocity_constant
+        self.nernst_constant = -F / (R * temperature)
+        self.cv_constant = -F * self.scan_direction * self.electrode_area * c_bulk * self.velocity_constant
         self.delta_theta = self.scan_direction * self.step_size
 
     def voltage_profile_setup(self, first_redox: float, second_redox: Optional[float] = None) -> tuple[list[float], list]:
         """TO-DO
         Return potential steps for voltage profile and for exponential Nernstian/Butler-Volmer function.
         This is equation (6:1) from [1].
+
+        Parameters
+        ----------
+        first_redox : float
+            Reduction potential of the first electron transfer process (V vs reference).
+        second_redox : Optional[float] = None
+            Reduction potential of the second electron transfer process (V vs reference).
+            Only used if a 2 electron process class is called.
 
         Returns
         -------
@@ -107,9 +112,9 @@ class CyclicVoltammetryProtocol(ABC):
         theta = self.start_potential - self.delta_theta
         all_xi_functions = []
         potential = []
-        for i in range(1, self.n_max + 1):
+        for step in range(1, self.n_max + 1):
             potential.append(theta)
-            if i < (int(self.n_max / 2)):
+            if step < (int(self.n_max / 2)):
                 theta -= self.delta_theta
             else:
                 theta += self.delta_theta
@@ -117,7 +122,7 @@ class CyclicVoltammetryProtocol(ABC):
         for redox_potential in electron_transfers:
             xi_function = np.zeros(self.n_max)
             for k in range(1, self.n_max + 1):
-                xi_function[k - 1] = np.exp(self.nernst_constant * self.scan_direction
+                xi_function[k-1] = np.exp(self.nernst_constant * self.scan_direction
                                             * (self.switch_potential
                                                + self.scan_direction * abs((k * self.step_size) + self.scan_direction
                                                                            * (self.switch_potential - self.start_potential))
@@ -146,7 +151,7 @@ class CyclicVoltammetryProtocol(ABC):
 
         weights = np.ones(self.n_max)
         for n in range(1, self.n_max):
-            weights[n] = (2 * n - 1) * (weights[n - 1] / (2 * n))
+            weights[n] = (2*n-1) * (weights[n-1]/(2*n))
         return weights
 
     @abstractmethod
@@ -163,11 +168,11 @@ class E_rev(CyclicVoltammetryProtocol):
     Parameters
     ----------
     start_potential : float
-        Starting potential of scan (V vs. reference).
+        Starting potential of scan (V vs reference).
     switch_potential : float
-        Switching potential of scan (V vs. reference).
+        Switching potential of scan (V vs reference).
     formal_potential : float
-        Formal reduction potential (V vs. reference).
+        Formal reduction potential (V vs reference).
     scan_rate : float
         Potential sweep rate (V/s).
     c_bulk : float
@@ -231,10 +236,10 @@ class E_rev(CyclicVoltammetryProtocol):
         current = np.zeros(self.n_max)
         for n in range(1, self.n_max + 1):  # TO-DO refactor
             if n == 1:
-                current[n - 1] = self.cv_constant / (1 + (self.diffusion_ratio / xi_function[n - 1]))
+                current[n-1] = self.cv_constant / (1 + (self.diffusion_ratio / xi_function[n - 1]))
             else:
-                sum_weights = sum(weights[k] * current[n - k - 1] for k in range(1, n))
-                current[n - 1] = ((self.cv_constant / (1 + (self.diffusion_ratio / xi_function[n - 1])))
+                sum_weights = sum(weights[k] * current[n-k-1] for k in range(1, n))
+                current[n-1] = ((self.cv_constant / (1 + (self.diffusion_ratio / xi_function[n - 1])))
                                   - sum_weights)
         return potential, current
 
@@ -247,11 +252,11 @@ class E_quasirev(CyclicVoltammetryProtocol):
     Parameters
     ----------
     start_potential : float
-        Starting potential of scan (V vs. reference).
+        Starting potential of scan (V vs reference).
     switch_potential : float
-        Switching potential of scan (V vs. reference).
+        Switching potential of scan (V vs reference).
     formal_potential : float
-        Formal reduction potential (V vs. reference).
+        Formal reduction potential (V vs reference).
     scan_rate : float
         Potential sweep rate (V/s).
     c_bulk : float
@@ -322,16 +327,16 @@ class E_quasirev(CyclicVoltammetryProtocol):
         potential, xi_function = self.voltage_profile_setup(self.formal_potential)
         current = np.zeros(self.n_max)
         xi_function = xi_function[0]
-        for N in range(1, self.n_max + 1):  # TO-DO refactor
-            if N == 1:
-                current[N - 1] = self.cv_constant / (1 + (self.diffusion_ratio / xi_function[N - 1])
-                                                     + (self.velocity_constant / (np.power(xi_function[N - 1], self.alpha)
+        for n in range(1, self.n_max + 1):  # TO-DO refactor
+            if n == 1:
+                current[n-1] = self.cv_constant / (1 + (self.diffusion_ratio / xi_function[n-1])
+                                                     + (self.velocity_constant / (np.power(xi_function[n-1], self.alpha)
                                                                                   * self.k_0)))
             else:
-                sum_weights = sum(weights[k] * current[N - k - 1] for k in range(1, N))
-                current[N - 1] = ((self.cv_constant - (1 + (self.diffusion_ratio / xi_function[N - 1]))
-                                   * sum_weights) / (1 + (self.diffusion_ratio / xi_function[N - 1])
-                                                     + (self.velocity_constant / (np.power(xi_function[N - 1], self.alpha)
+                sum_weights = sum(weights[k] * current[n-k-1] for k in range(1, n))
+                current[n-1] = ((self.cv_constant - (1 + (self.diffusion_ratio / xi_function[n-1]))
+                                   * sum_weights) / (1 + (self.diffusion_ratio / xi_function[n-1])
+                                                     + (self.velocity_constant / (np.power(xi_function[n-1], self.alpha)
                                                                                   * self.k_0))))
         return potential, current
 
@@ -345,11 +350,11 @@ class E_quasirevC(CyclicVoltammetryProtocol):
     Parameters
     ----------
     start_potential : float
-        Starting potential of scan (V vs. reference).
+        Starting potential of scan (V vs reference).
     switch_potential : float
-        Switching potential of scan (V vs. reference).
+        Switching potential of scan (V vs reference).
     formal_potential : float
-        Formal reduction potential (V vs. reference).
+        Formal reduction potential (V vs reference).
     scan_rate : float
         Potential sweep rate (V/s).
     c_bulk : float
@@ -433,18 +438,18 @@ class E_quasirevC(CyclicVoltammetryProtocol):
         xi_function = xi_function[0]
         for n in range(1, self.n_max + 1):  # TO-DO refactor
             if n == 1:
-                current[n - 1] = (self.cv_constant / (1 + (self.velocity_constant
-                                                           / (np.power(xi_function[n - 1], self.alpha) * self.k_0))
-                                                      + (self.diffusion_ratio / xi_function[n - 1])))
+                current[n-1] = (self.cv_constant / (1 + (self.velocity_constant
+                                                           / (np.power(xi_function[n-1], self.alpha) * self.k_0))
+                                                      + (self.diffusion_ratio / xi_function[n-1])))
             else:
-                sum_weights = sum(weights[k] * current[n - k - 1] for k in range(1, n))
-                sum_exp_weights = sum((weights[k] * current[n - k - 1] * np.exp((-k - 1) * k_sum)) for k in range(1, n))
-                current[n - 1] = (self.cv_constant
-                                  - ((1 + (self.diffusion_ratio / ((1 + k_const) * xi_function[n - 1]))) * sum_weights)
-                                  - (((k_const * self.diffusion_ratio) / (xi_function[n - 1] * (1 + k_const)))
+                sum_weights = sum(weights[k] * current[n-k-1] for k in range(1, n))
+                sum_exp_weights = sum((weights[k] * current[n-k-1] * np.exp((-k-1) * k_sum)) for k in range(1, n))
+                current[n-1] = (self.cv_constant
+                                  - ((1 + (self.diffusion_ratio / ((1 + k_const) * xi_function[n-1]))) * sum_weights)
+                                  - (((k_const * self.diffusion_ratio) / (xi_function[n-1] * (1 + k_const)))
                                      * sum_exp_weights)
-                                  ) / (1 + (self.velocity_constant / (np.power(xi_function[n - 1], self.alpha) * self.k_0))
-                                       + (self.diffusion_ratio / xi_function[n - 1]))
+                                  ) / (1 + (self.velocity_constant / (np.power(xi_function[n-1], self.alpha) * self.k_0))
+                                       + (self.diffusion_ratio / xi_function[n-1]))
         return potential, current
 
 
@@ -456,13 +461,13 @@ class EE(CyclicVoltammetryProtocol):
     Parameters
     ----------
     start_potential : float
-        Starting potential of scan (V vs. reference).
+        Starting potential of scan (V vs reference).
     switch_potential : float
-        Switching potential of scan (V vs. reference).
+        Switching potential of scan (V vs reference).
     formal_potential : float
-        Formal reduction potential (V vs. reference).
+        Formal reduction potential (V vs reference).
     formal_potential_second_e : float
-        Formal reduction potential (V vs. reference).
+        Formal reduction potential (V vs reference).
     scan_rate : float
         Potential sweep rate (V/s).
     c_bulk : float
@@ -530,6 +535,9 @@ class EE(CyclicVoltammetryProtocol):
         self.k_0 = k_0 / 100  # cm/s to m/s
         self.k_0_second_e = k_0_second_e / 100  # cm/s to m/s
 
+        #if self.formal_potential_second_e is None:
+        #    raise ValueError("'formal_potential_second_e' must also be declared when using a 2 electron mechanism")
+
     def mechanism(self) -> tuple[list[float], list]:
         """
         Simulates the CV for two successive one-electron quasi-reversible transfer (EE) mechanism.
@@ -564,28 +572,28 @@ class EE(CyclicVoltammetryProtocol):
 
         i_constant = (self.cv_constant / self.velocity_constant) * intermediate_const
 
-        for n in range(1, self.n_max + 1):
+        for n in range(1, self.n_max + 1):  # TO-DO start at 0
             if n == 1:
-                current1[n - 1] = (((w_function[n - 1] + v_function[n - 1]) * xi_function1[n - 1]
-                                    * i_constant) / ((z_function[n - 1] + y_function[n - 1])
-                                                   * (w_function[n - 1] + v_function[n - 1]) - 1))
+                current1[n-1] = (((w_function[n-1] + v_function[n-1]) * xi_function1[n-1]
+                                    * i_constant) / ((z_function[n-1] + y_function[n-1])
+                                                   * (w_function[n-1] + v_function[n-1]) - 1))
 
-                current2[n - 1] = ((xi_function1[n - 1] * i_constant) / ((z_function[n - 1]
-                                                                   + y_function[n - 1]) * (
-                                                                              w_function[n - 1] + v_function[n - 1]) - 1))
+                current2[n-1] = ((xi_function1[n-1] * i_constant) / ((z_function[n-1]
+                                                                   + y_function[n-1]) * (
+                                                                              w_function[n-1] + v_function[n-1]) - 1))
             else:
-                summ1 = sum(weights[k] * current1[n - k - 1] for k in range(1, n))
-                summ2 = sum(weights[k] * current2[n - k - 1] for k in range(1, n))
-                current1[n - 1] = ((((w_function[n - 1] + v_function[n - 1]) * xi_function1[n - 1]
-                                     * i_constant) - ((y_function[n - 1] * (w_function[n - 1]
-                                                                      + v_function[n - 1]) - 1) * summ1) + w_function[n - 1]
-                                    * summ2) / ((z_function[n - 1] + y_function[n - 1])
-                                                * (w_function[n - 1] + v_function[n - 1]) - 1))
+                summ1 = sum(weights[k] * current1[n-k-1] for k in range(1, n))
+                summ2 = sum(weights[k] * current2[n-k-1] for k in range(1, n))
+                current1[n-1] = ((((w_function[n-1] + v_function[n-1]) * xi_function1[n-1]
+                                     * i_constant) - ((y_function[n-1] * (w_function[n-1]
+                                                                      + v_function[n-1]) - 1) * summ1) + w_function[n-1]
+                                    * summ2) / ((z_function[n-1] + y_function[n-1])
+                                                * (w_function[n-1] + v_function[n-1]) - 1))
 
-                current2[n - 1] = (((xi_function1[n - 1] * i_constant) + z_function[n - 1] * summ1
-                                    - (v_function[n - 1] * (z_function[n - 1] + y_function[n - 1])
-                                       - 1) * summ2) / ((z_function[n - 1] + y_function[n - 1])
-                                                        * (w_function[n - 1] + v_function[n - 1]) - 1))
+                current2[n-1] = (((xi_function1[n-1] * i_constant) + z_function[n-1] * summ1
+                                    - (v_function[n-1] * (z_function[n-1] + y_function[n-1])
+                                       - 1) * summ2) / ((z_function[n-1] + y_function[n- 1])
+                                                        * (w_function[n-1] + v_function[n-1]) - 1))
         current = [current1[i] + current2[i] for i in range(len(current1))]
         return potential, current
 
