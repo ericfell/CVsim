@@ -4,7 +4,6 @@ of one- and two-electron processes.
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional
 import numpy as np
 import scipy.constants as spc
 
@@ -25,8 +24,8 @@ class CyclicVoltammetryProtocol(ABC):
         Starting potential of scan (V vs reference).
     switch_potential : float
         Switching potential of scan (V vs reference).
-    formal_potential : float
-        Formal reduction potential (V vs reference).
+    redox_potential : float
+        Reduction potential of the one-electron transfer process (V vs reference).
     scan_rate : float
         Potential sweep rate (V/s).
     c_bulk : float
@@ -43,7 +42,7 @@ class CyclicVoltammetryProtocol(ABC):
         Default is 1.5 mm, a typical working electrode.
     temperature : float
         Temperature (K).
-        Default is 298 K (25C).
+        Default is 298 K (24.85C).
 
     Notes
     -----
@@ -58,7 +57,7 @@ class CyclicVoltammetryProtocol(ABC):
             self,
             start_potential: float,
             switch_potential: float,
-            formal_potential: float,
+            redox_potential: float,
             scan_rate: float,
             c_bulk: float,
             diffusion_reactant: float,
@@ -69,7 +68,7 @@ class CyclicVoltammetryProtocol(ABC):
     ) -> None:
         self.start_potential = start_potential
         self.switch_potential = switch_potential
-        self.formal_potential = formal_potential
+        self.redox_potential = redox_potential
         self.step_size = step_size / 1000  # mV to V
         self.delta_t = self.step_size / scan_rate
         self.diffusion_reactant = diffusion_reactant / 1e4  # cm^2/s to m^2/s
@@ -83,18 +82,17 @@ class CyclicVoltammetryProtocol(ABC):
         self.cv_constant = -F * self.scan_direction * self.electrode_area * c_bulk * self.velocity_constant
         self.delta_theta = self.scan_direction * self.step_size
 
-    def voltage_profile_setup(self, first_redox: float, second_redox: Optional[float] = None) -> tuple[list[float], list]:
-        """TO-DO
+    def voltage_profile_setup(self, second_redox_potential: float | None = None) -> tuple[list[float], list]:
+        """
         Return potential steps for voltage profile and for exponential Nernstian/Butler-Volmer function.
         This is equation (6:1) from [1].
 
         Parameters
         ----------
-        first_redox : float
-            Reduction potential of the first electron transfer process (V vs reference).
-        second_redox : Optional[float] = None
+        second_redox_potential : float | None
             Reduction potential of the second electron transfer process (V vs reference).
             Only used if a 2 electron process class is called.
+            Default is None.
 
         Returns
         -------
@@ -105,9 +103,9 @@ class CyclicVoltammetryProtocol(ABC):
 
         """
 
-        electron_transfers = [first_redox]
-        if second_redox is not None:
-            electron_transfers.append(second_redox)
+        electron_transfers = [self.redox_potential]
+        if second_redox_potential is not None:
+            electron_transfers.append(second_redox_potential)
 
         theta = self.start_potential - self.delta_theta
         all_xi_functions = []
@@ -119,14 +117,14 @@ class CyclicVoltammetryProtocol(ABC):
             else:
                 theta += self.delta_theta
 
-        for redox_potential in electron_transfers:
+        for potential_value in electron_transfers:
             xi_function = np.zeros(self.n_max)
             for k in range(1, self.n_max + 1):
                 xi_function[k-1] = np.exp(self.nernst_constant * self.scan_direction
                                             * (self.switch_potential
                                                + self.scan_direction * abs((k * self.step_size) + self.scan_direction
                                                                            * (self.switch_potential - self.start_potential))
-                                               - redox_potential))
+                                               - potential_value))
 
             all_xi_functions.append(xi_function)
 
@@ -137,7 +135,7 @@ class CyclicVoltammetryProtocol(ABC):
 
         return potential, all_xi_functions
 
-    def _semi_integrate_weights(self) -> np.ndarray:
+    def _semi_integrate_weights(self) -> list:
         """
         Weighting factors for semi-integration method.
         This is equation (5:5) from [1].
@@ -149,13 +147,13 @@ class CyclicVoltammetryProtocol(ABC):
 
         """
 
-        weights = np.ones(self.n_max)
+        weights = [1.0] * self.n_max
         for n in range(1, self.n_max):
             weights[n] = (2*n-1) * (weights[n-1]/(2*n))
         return weights
 
     @abstractmethod
-    def mechanism(self) -> tuple[np.ndarray, np.ndarray]:
+    def mechanism(self) -> tuple[list, np.ndarray]:
         """Simulates current-potential profile for desired mechanism"""
         raise NotImplementedError
 
@@ -171,7 +169,7 @@ class E_rev(CyclicVoltammetryProtocol):
         Starting potential of scan (V vs reference).
     switch_potential : float
         Switching potential of scan (V vs reference).
-    formal_potential : float
+    redox_potential : float
         Formal reduction potential (V vs reference).
     scan_rate : float
         Potential sweep rate (V/s).
@@ -197,7 +195,7 @@ class E_rev(CyclicVoltammetryProtocol):
             self,
             start_potential: float,
             switch_potential: float,
-            formal_potential: float,
+            redox_potential: float,
             scan_rate: float,
             c_bulk: float,
             diffusion_reactant: float,
@@ -209,7 +207,7 @@ class E_rev(CyclicVoltammetryProtocol):
         super().__init__(
             start_potential,
             switch_potential,
-            formal_potential,
+            redox_potential,
             scan_rate,
             c_bulk,
             diffusion_reactant,
@@ -231,16 +229,15 @@ class E_rev(CyclicVoltammetryProtocol):
 
         """
         weights = self._semi_integrate_weights()
-        potential, xi_function = self.voltage_profile_setup(self.formal_potential)
+        potential, xi_function = self.voltage_profile_setup()
         xi_function = xi_function[0]
         current = np.zeros(self.n_max)
         for n in range(1, self.n_max + 1):  # TO-DO refactor
             if n == 1:
-                current[n-1] = self.cv_constant / (1 + (self.diffusion_ratio / xi_function[n - 1]))
+                current[n-1] = self.cv_constant / (1 + (self.diffusion_ratio / xi_function[n-1]))
             else:
                 sum_weights = sum(weights[k] * current[n-k-1] for k in range(1, n))
-                current[n-1] = ((self.cv_constant / (1 + (self.diffusion_ratio / xi_function[n - 1])))
-                                  - sum_weights)
+                current[n-1] = (self.cv_constant / (1 + (self.diffusion_ratio / xi_function[n-1]))) - sum_weights
         return potential, current
 
 
@@ -255,7 +252,7 @@ class E_quasirev(CyclicVoltammetryProtocol):
         Starting potential of scan (V vs reference).
     switch_potential : float
         Switching potential of scan (V vs reference).
-    formal_potential : float
+    redox_potential : float
         Formal reduction potential (V vs reference).
     scan_rate : float
         Potential sweep rate (V/s).
@@ -285,7 +282,7 @@ class E_quasirev(CyclicVoltammetryProtocol):
             self,
             start_potential: float,
             switch_potential: float,
-            formal_potential: float,
+            redox_potential: float,
             scan_rate: float,
             c_bulk: float,
             diffusion_reactant: float,
@@ -299,7 +296,7 @@ class E_quasirev(CyclicVoltammetryProtocol):
         super().__init__(
             start_potential,
             switch_potential,
-            formal_potential,
+            redox_potential,
             scan_rate,
             c_bulk,
             diffusion_reactant,
@@ -324,7 +321,7 @@ class E_quasirev(CyclicVoltammetryProtocol):
         """
 
         weights = self._semi_integrate_weights()
-        potential, xi_function = self.voltage_profile_setup(self.formal_potential)
+        potential, xi_function = self.voltage_profile_setup()
         current = np.zeros(self.n_max)
         xi_function = xi_function[0]
         for n in range(1, self.n_max + 1):  # TO-DO refactor
@@ -353,7 +350,7 @@ class E_quasirevC(CyclicVoltammetryProtocol):
         Starting potential of scan (V vs reference).
     switch_potential : float
         Switching potential of scan (V vs reference).
-    formal_potential : float
+    redox_potential : float
         Formal reduction potential (V vs reference).
     scan_rate : float
         Potential sweep rate (V/s).
@@ -387,7 +384,7 @@ class E_quasirevC(CyclicVoltammetryProtocol):
             self,
             start_potential: float,
             switch_potential: float,
-            formal_potential: float,
+            redox_potential: float,
             scan_rate: float,
             c_bulk: float,
             diffusion_reactant: float,
@@ -403,7 +400,7 @@ class E_quasirevC(CyclicVoltammetryProtocol):
         super().__init__(
             start_potential,
             switch_potential,
-            formal_potential,
+            redox_potential,
             scan_rate,
             c_bulk,
             diffusion_reactant,
@@ -433,7 +430,7 @@ class E_quasirevC(CyclicVoltammetryProtocol):
         k_sum = self.k_forward + self.k_backward
         k_const = self.k_forward / self.k_backward
         weights = self._semi_integrate_weights()
-        potential, xi_function = self.voltage_profile_setup(self.formal_potential)
+        potential, xi_function = self.voltage_profile_setup()
         current = np.zeros(self.n_max)
         xi_function = xi_function[0]
         for n in range(1, self.n_max + 1):  # TO-DO refactor
@@ -464,7 +461,7 @@ class EE(CyclicVoltammetryProtocol):
         Starting potential of scan (V vs reference).
     switch_potential : float
         Switching potential of scan (V vs reference).
-    formal_potential : float
+    redox_potential : float
         Formal reduction potential (V vs reference).
     formal_potential_second_e : float
         Formal reduction potential (V vs reference).
@@ -502,7 +499,7 @@ class EE(CyclicVoltammetryProtocol):
             self,
             start_potential: float,
             switch_potential: float,
-            formal_potential: float,
+            redox_potential: float,
             formal_potential_second_e: float,
             scan_rate: float,
             c_bulk: float,
@@ -520,7 +517,7 @@ class EE(CyclicVoltammetryProtocol):
         super().__init__(
             start_potential,
             switch_potential,
-            formal_potential,
+            redox_potential,
             scan_rate,
             c_bulk,
             diffusion_reactant,
@@ -552,7 +549,7 @@ class EE(CyclicVoltammetryProtocol):
         """
 
         weights = self._semi_integrate_weights()
-        potential, xi_function = self.voltage_profile_setup(self.formal_potential, self.formal_potential_second_e)
+        potential, xi_function = self.voltage_profile_setup(self.formal_potential_second_e)
         xi_function1 = xi_function[0]
         xi_function2 = xi_function[1]
 
@@ -603,7 +600,7 @@ if __name__ == '__main__':
     print('testing')
 
     #test1 = E_rev(-0.3, 0.3, 0, 1.0, 1.0, 1e-5, 1e-5, disk_radius=5.642)
-    test1 = EE(-0.5, 0.5, -0.2, 0.0, 1.0, 1, 1e-5, 1e-5, 1e-5, 0.5, 0.5, 1e-3, 1e-3)
+    test1 = EE(-0.3, 0.3, -0.1, 0.1, 1.0, 1, 1e-5, 1e-5, 1e-5, 0.5, 0.5, 1e-2, 5e-3, disk_radius=5.642)
 
     v, i = test1.mechanism()
     peak_idx = np.argmax(i)
