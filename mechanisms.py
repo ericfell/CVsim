@@ -112,7 +112,7 @@ class CyclicVoltammetryProtocol(ABC):
         potential = []
         for step in range(1, self.n_max + 1):
             potential.append(theta)
-            if step < (int(self.n_max / 2)):
+            if step < int(self.n_max / 2):
                 theta -= self.delta_theta
             else:
                 theta += self.delta_theta
