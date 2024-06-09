@@ -128,7 +128,7 @@ class CyclicVoltammetryProtocol(ABC):
 
             all_xi_functions.append(xi_function)
 
-        # testing lists only (limited numpy)
+        # testing lists only (limited numpy)?
         #
         # potential = [0.0] * self.n_max
         # potential[0] = theta
@@ -525,11 +525,12 @@ class EE(CyclicVoltammetryProtocol):
         self.k_0 = k_0 / 100  # cm/s to m/s
         self.k_0_second_e = k_0_second_e / 100  # cm/s to m/s
 
+        # TO-DO
         # if self.second_reduction_potential is None:
         #    raise ValueError("'second_reduction_potential' must also be declared when using a 2 electron mechanism")
 
-    def mechanism(self) -> tuple[list[float], list]:
-        """ TO-DO: w and v functions can combine?
+    def mechanism(self) -> tuple[list[float], list[float]]:
+        """
         Simulates the CV for two successive one-electron quasi-reversible transfer (EE) mechanism.
 
         Returns
