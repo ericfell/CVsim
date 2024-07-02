@@ -1,6 +1,10 @@
 """
-Class for semi-integration simulation of cyclic voltammetry (CV)
+Module for semi-integration simulation of cyclic voltammetry (CV)
 of one- and two-electron processes.
+
+Algorithm Reference:
+    [1] Oldham, K. B.; Myland, J. C. "Modelling cyclic voltammetry without
+    digital simulation." Electrochimica Acta, 56, 2011, 10612-10625.
 """
 
 from abc import ABC, abstractmethod
@@ -14,18 +18,18 @@ F = spc.value('Faraday constant')
 R = spc.R
 
 
-class CyclicVoltammetryProtocol(ABC):
+class CyclicVoltammetryScheme(ABC):
     """
-    Abstract class representing a simulated cyclic voltammogram on a disk macro-electrode.
+    A scheme for a simulated cyclic voltammogram on a disk macro-electrode.
 
     Parameters
     ----------
     start_potential : float
-        Starting potential of scan (V vs reference).
+        Starting potential of scan (V vs. reference).
     switch_potential : float
-        Switching potential of scan (V vs reference).
+        Switching potential of scan (V vs. reference).
     reduction_potential : float
-        Reduction potential of the one-electron transfer process (V vs reference).
+        Reduction potential of the one-electron transfer process (V vs. reference).
     scan_rate : float
         Potential sweep rate (V/s).
     c_bulk : float
@@ -42,14 +46,7 @@ class CyclicVoltammetryProtocol(ABC):
         Default is 1.5 mm, a typical working electrode.
     temperature : float
         Temperature (K).
-        Default is 298 K (24.85C).
-
-    Notes
-    -----
-
-    Algorithm Reference:
-    [1] Oldham, K. B.; Myland, J. C. "Modelling cyclic voltammetry without
-    digital simulation." Electrochimica Acta, 56, 2011, 10612-10625.
+        Default is 298.0 K (24.85C).
 
     """
 
@@ -69,28 +66,39 @@ class CyclicVoltammetryProtocol(ABC):
         self.start_potential = start_potential
         self.switch_potential = switch_potential
         self.reduction_potential = reduction_potential
+
         self.step_size = step_size / 1000  # mV to V
         self.delta_t = self.step_size / scan_rate
+
         self.diffusion_reactant = diffusion_reactant / 1e4  # cm^2/s to m^2/s
         self.diffusion_product = diffusion_product / 1e4  # cm^2/s to m^2/s
         self.diffusion_ratio = (self.diffusion_reactant / self.diffusion_product) ** 0.5
+
         self.velocity_constant = (self.diffusion_reactant / self.delta_t) ** 0.5
         self.electrode_area = np.pi * (disk_radius / 1000) ** 2  # mm to m, then m^2
         self.n_max = int((abs(switch_potential - start_potential) * 2) / self.step_size)
         self.scan_direction = -1 if self.start_potential < self.switch_potential else 1
+
         self.nernst_constant = -F / (R * temperature)
         self.cv_constant = -F * self.scan_direction * self.electrode_area * c_bulk * self.velocity_constant
         self.delta_theta = self.scan_direction * self.step_size
 
+        # Weighting factors for semi-integration method.
+        # This is equation (5:5) from [1].
+        weights = [1.0] * self.n_max
+        for n in range(1, self.n_max):
+            weights[n] = (2 * n - 1) * (weights[n - 1] / (2 * n))
+        self.semi_integration_weights = weights
+
     def voltage_profile_setup(self, second_reduction_potential: float | None = None) -> tuple[list[float], list]:
         """
-        Return potential steps for voltage profile and for exponential Nernstian/Butler-Volmer function.
+        Compute the potential steps for voltage profile and for exponential Nernstian/Butler-Volmer function.
         This is equation (6:1) from [1].
 
         Parameters
         ----------
-        second_reduction_potential : float | None
-            Reduction potential of the second electron transfer process (V vs reference).
+        second_reduction_potential : float, optional
+            Reduction potential of the second electron transfer process (V vs. reference).
             Only used if a 2 electron process class is called.
             Default is None.
 
@@ -108,57 +116,37 @@ class CyclicVoltammetryProtocol(ABC):
             electron_transfers.append(second_reduction_potential)
 
         theta = self.start_potential - self.delta_theta
-        all_xi_functions = []
+        xi_functions = []
         potential = []
-        for step in range(1, self.n_max + 1):
+
+        for step in range(self.n_max):
             potential.append(theta)
-            if step < int(self.n_max / 2):
+            # Using <= here for exact midpoint
+            if step <= self.n_max // 2:
                 theta -= self.delta_theta
             else:
                 theta += self.delta_theta
 
+        potential_diff = self.scan_direction * (self.switch_potential - self.start_potential)
         for potential_value in electron_transfers:
             xi_function = np.zeros(self.n_max)
             for k in range(1, self.n_max + 1):
-                xi_function[k-1] = np.exp(self.nernst_constant * self.scan_direction
-                                          * (self.switch_potential
-                                             + self.scan_direction
-                                             * abs((k * self.step_size) + self.scan_direction
-                                                   * (self.switch_potential - self.start_potential)) - potential_value))
+                potential_excursion = self.scan_direction * abs(k * self.step_size + potential_diff)
+                xi_function[k-1] = np.exp(self.scan_direction *
+                                          self.nernst_constant *
+                                          (self.switch_potential + potential_excursion - potential_value))
 
-            all_xi_functions.append(xi_function)
+            xi_functions.append(xi_function)
 
-        # testing lists only (limited numpy)?
-        #
-        # potential = [0.0] * self.n_max
-        # potential[0] = theta
-
-        return potential, all_xi_functions
-
-    def _semi_integrate_weights(self) -> list:
-        """
-        Weighting factors for semi-integration method.
-        This is equation (5:5) from [1].
-
-        Returns
-        -------
-        weights : np.ndarray
-            Array of weighting factors.
-
-        """
-
-        weights = [1.0] * self.n_max
-        for n in range(1, self.n_max):
-            weights[n] = (2 * n - 1) * (weights[n-1] / (2 * n))
-        return weights
+        return potential, xi_functions
 
     @abstractmethod
-    def mechanism(self) -> tuple[list, np.ndarray]:
+    def simulate(self) -> tuple[list, np.ndarray]:
         """Simulates current-potential profile for desired mechanism"""
         raise NotImplementedError
 
 
-class E_rev(CyclicVoltammetryProtocol):
+class E_rev(CyclicVoltammetryScheme):
     """
     Provides a current-potential profile for a reversible (Nernstian) one electron transfer mechanism.
     This is equation (7:7) from [1].
@@ -166,11 +154,11 @@ class E_rev(CyclicVoltammetryProtocol):
     Parameters
     ----------
     start_potential : float
-        Starting potential of scan (V vs reference).
+        Starting potential of scan (V vs. reference).
     switch_potential : float
-        Switching potential of scan (V vs reference).
+        Switching potential of scan (V vs. reference).
     reduction_potential : float
-        Reduction potential of the one-electron transfer process (V vs reference).
+        Reduction potential of the one-electron transfer process (V vs. reference).
     scan_rate : float
         Potential sweep rate (V/s).
     c_bulk : float
@@ -187,7 +175,7 @@ class E_rev(CyclicVoltammetryProtocol):
         Default is 1.5 mm, a typical working electrode.
     temperature : float
         Temperature (K).
-        Default is 298 K (25C).
+        Default is 298.0 K (24.85C).
 
     """
 
@@ -214,9 +202,10 @@ class E_rev(CyclicVoltammetryProtocol):
             diffusion_product,
             step_size,
             disk_radius,
-            temperature)
+            temperature
+        )
 
-    def mechanism(self) -> tuple[list, np.ndarray]:
+    def simulate(self) -> tuple[list, np.ndarray]:
         """
         Simulates the CV for a reversible one electron transfer mechanism.
 
@@ -228,20 +217,19 @@ class E_rev(CyclicVoltammetryProtocol):
             Current values in full CV sweep.
 
         """
-        weights = self._semi_integrate_weights()
-        potential, xi_function = self.voltage_profile_setup()
-        # better way to handle this?
-        xi_function = xi_function[0]
+        weights = self.semi_integration_weights
+        potential, [xi_function] = self.voltage_profile_setup()
 
         current = np.zeros(self.n_max)
 
         for n in range(self.n_max):
             sum_weights = sum(weights[k] * current[n-k] for k in range(n))
-            current[n] = (self.cv_constant / (1 + (self.diffusion_ratio / xi_function[n]))) - sum_weights
+            xi_ratio = 1 + (self.diffusion_ratio / xi_function[n])
+            current[n] = (self.cv_constant / xi_ratio) - sum_weights
         return potential, current
 
 
-class E_quasirev(CyclicVoltammetryProtocol):
+class E_q(CyclicVoltammetryScheme):
     """
     Provides a current-potential profile for a quasi-reversible one electron transfer mechanism.
     This is equation (8:3) from [1].
@@ -249,11 +237,11 @@ class E_quasirev(CyclicVoltammetryProtocol):
     Parameters
     ----------
     start_potential : float
-        Starting potential of scan (V vs reference).
+        Starting potential of scan (V vs. reference).
     switch_potential : float
-        Switching potential of scan (V vs reference).
+        Switching potential of scan (V vs. reference).
     reduction_potential : float
-        Reduction potential of the one-electron transfer process (V vs reference).
+        Reduction potential of the one-electron transfer process (V vs. reference).
     scan_rate : float
         Potential sweep rate (V/s).
     c_bulk : float
@@ -274,7 +262,7 @@ class E_quasirev(CyclicVoltammetryProtocol):
         Default is 1.5 mm, a typical working electrode.
     temperature : float
         Temperature (K).
-        Default is 298 K (25C).
+        Default is 298.0 K (24.85C).
 
     """
 
@@ -303,11 +291,12 @@ class E_quasirev(CyclicVoltammetryProtocol):
             diffusion_product,
             step_size,
             disk_radius,
-            temperature)
+            temperature
+        )
         self.alpha = alpha
         self.k_0 = k_0 / 100  # cm/s to m/s
 
-    def mechanism(self) -> tuple[list, np.ndarray]:
+    def simulate(self) -> tuple[list, np.ndarray]:
         """
         Simulates the CV for a quasi-reversible one electron transfer mechanism.
 
@@ -320,21 +309,23 @@ class E_quasirev(CyclicVoltammetryProtocol):
 
         """
 
-        weights = self._semi_integrate_weights()
-        potential, xi_function = self.voltage_profile_setup()
-        xi_function = xi_function[0]
+        weights = self.semi_integration_weights
+        potential, [xi_function] = self.voltage_profile_setup()
 
         current = np.zeros(self.n_max)
 
         for n in range(self.n_max):
             sum_weights = sum(weights[k] * current[n-k] for k in range(n))
-            current[n] = ((self.cv_constant - (1 + (self.diffusion_ratio / xi_function[n])) * sum_weights)
-                          / (1 + (self.diffusion_ratio / xi_function[n])
-                             + (self.velocity_constant / (np.power(xi_function[n], self.alpha) * self.k_0))))
+            xi_ratio = 1 + (self.diffusion_ratio / xi_function[n])
+            xi_alpha = self.k_0 * (xi_function[n] ** self.alpha)
+            numerator = self.cv_constant - xi_ratio * sum_weights
+            denominator = xi_ratio + (self.velocity_constant / xi_alpha)
+            current[n] = numerator / denominator
+
         return potential, current
 
 
-class E_quasirevC(CyclicVoltammetryProtocol):
+class E_qC(CyclicVoltammetryScheme):
     """
     Provides a current-potential profile for a quasi-reversible one electron transfer, followed by a reversible first
     order homogeneous chemical transformation mechanism.
@@ -343,11 +334,11 @@ class E_quasirevC(CyclicVoltammetryProtocol):
     Parameters
     ----------
     start_potential : float
-        Starting potential of scan (V vs reference).
+        Starting potential of scan (V vs. reference).
     switch_potential : float
-        Switching potential of scan (V vs reference).
+        Switching potential of scan (V vs. reference).
     reduction_potential : float
-        Reduction potential of the one-electron transfer process (V vs reference).
+        Reduction potential of the one-electron transfer process (V vs. reference).
     scan_rate : float
         Potential sweep rate (V/s).
     c_bulk : float
@@ -372,7 +363,7 @@ class E_quasirevC(CyclicVoltammetryProtocol):
         Default is 1.5 mm, a typical working electrode.
     temperature : float
         Temperature (K).
-        Default is 298 K (25C).
+        Default is 298.0 K (24.85C).
 
     """
 
@@ -403,13 +394,14 @@ class E_quasirevC(CyclicVoltammetryProtocol):
             diffusion_product,
             step_size,
             disk_radius,
-            temperature)
+            temperature
+        )
         self.alpha = alpha
         self.k_0 = k_0 / 100  # cm/s to m/s
         self.k_forward = k_forward
         self.k_backward = k_backward
 
-    def mechanism(self) -> tuple[list, np.ndarray]:
+    def simulate(self) -> tuple[list, np.ndarray]:
         """
         Simulates the CV for a quasi-reversible one electron transfer followed by a reversible first order homogeneous
         chemical transformation mechanism.
@@ -425,25 +417,38 @@ class E_quasirevC(CyclicVoltammetryProtocol):
 
         k_sum = self.k_forward + self.k_backward
         k_const = self.k_forward / self.k_backward
-        weights = self._semi_integrate_weights()
-        potential, xi_function = self.voltage_profile_setup()
-        xi_function = xi_function[0]
+        weights = self.semi_integration_weights
+        potential, [xi_function] = self.voltage_profile_setup()
 
         current = np.zeros(self.n_max)
+        exp_factors = np.zeros(self.n_max)
+
+        exp_k_sum = np.exp(-k_sum)
+        exp_factors[0] = exp_k_sum
+        for n in range(1, self.n_max):
+            exp_factors[n] = exp_factors[n-1] * exp_k_sum
 
         for n in range(self.n_max):
-            sum_weights = sum(weights[k] * current[n-k] for k in range(n))
-            sum_exp_weights = sum((weights[k] * current[n-k] * np.exp((-k-1) * k_sum)) for k in range(n))
+            sum_weights = 0
+            sum_exp_weights = 0
 
-            current[n] = ((self.cv_constant
-                          - ((1 + (self.diffusion_ratio / ((1 + k_const) * xi_function[n]))) * sum_weights)
-                          - (((k_const * self.diffusion_ratio) / (xi_function[n] * (1 + k_const))) * sum_exp_weights))
-                          / (1 + (self.velocity_constant / (np.power(xi_function[n], self.alpha) * self.k_0))
-                             + (self.diffusion_ratio / xi_function[n])))
+            for k in range(n):
+                weighted_current = weights[k] * current[n-k]
+                sum_weights += weighted_current
+                sum_exp_weights += weighted_current * exp_factors[k]
+
+            xi_diffusion = self.diffusion_ratio / ((1 + k_const) * xi_function[n])
+            numerator = self.cv_constant - ((1 + xi_diffusion) * sum_weights) - (k_const * xi_diffusion * sum_exp_weights)
+
+            xi_alpha = self.k_0 * (xi_function[n] ** self.alpha)
+            denominator = 1 + (self.velocity_constant / xi_alpha) + (self.diffusion_ratio / xi_function[n])
+
+            current[n] = numerator / denominator
+
         return potential, current
 
 
-class EE(CyclicVoltammetryProtocol):
+class EE(CyclicVoltammetryScheme):
     """
     Provides a current-potential profile for two successive one-electron quasi-reversible transfers.
     This is equation (12:19) from [1].
@@ -451,13 +456,13 @@ class EE(CyclicVoltammetryProtocol):
     Parameters
     ----------
     start_potential : float
-        Starting potential of scan (V vs reference).
+        Starting potential of scan (V vs. reference).
     switch_potential : float
-        Switching potential of scan (V vs reference).
+        Switching potential of scan (V vs. reference).
     reduction_potential : float
-        Reduction potential of the first one-electron transfer process (V vs reference).
+        Reduction potential of the first one-electron transfer process (V vs. reference).
     second_reduction_potential : float
-        Reduction potential of the second one-electron transfer process (V vs reference).
+        Reduction potential of the second one-electron transfer process (V vs. reference).
     scan_rate : float
         Potential sweep rate (V/s).
     c_bulk : float
@@ -484,7 +489,7 @@ class EE(CyclicVoltammetryProtocol):
         Default is 1.5 mm, a typical working electrode.
     temperature : float
         Temperature (K).
-        Default is 298 K (25C).
+        Default is 298.0 K (24.85C).
 
     """
 
@@ -517,7 +522,8 @@ class EE(CyclicVoltammetryProtocol):
             diffusion_product,
             step_size,
             disk_radius,
-            temperature)
+            temperature
+        )
         self.second_reduction_potential = second_reduction_potential
         self.diffusion_intermediate = diffusion_intermediate / 1e4  # cm^2/s to m^2/s
         self.alpha = alpha
@@ -525,11 +531,7 @@ class EE(CyclicVoltammetryProtocol):
         self.k_0 = k_0 / 100  # cm/s to m/s
         self.k_0_second_e = k_0_second_e / 100  # cm/s to m/s
 
-        # TO-DO
-        # if self.second_reduction_potential is None:
-        #    raise ValueError("'second_reduction_potential' must also be declared when using a 2 electron mechanism")
-
-    def mechanism(self) -> tuple[list[float], list[float]]:
+    def simulate(self) -> tuple[list[float], list[float]]:
         """
         Simulates the CV for two successive one-electron quasi-reversible transfer (EE) mechanism.
 
@@ -542,17 +544,20 @@ class EE(CyclicVoltammetryProtocol):
 
         """
 
-        weights = self._semi_integrate_weights()
+        weights = self.semi_integration_weights
         potential, (xi_function1, xi_function2) = self.voltage_profile_setup(self.second_reduction_potential)
 
         intermediate_const = (self.diffusion_intermediate / self.delta_t) ** 0.5
 
         # Equation (12:15) from [1]
-        z_function = (intermediate_const / self.k_0) * np.power(xi_function1, (1 - self.alpha))
+        z_function = (intermediate_const / self.k_0) * (xi_function1 ** (1 - self.alpha))
+
         # Equation (12:16) from [1]
         y_function = 1 + (xi_function1 * np.sqrt(self.diffusion_intermediate / self.diffusion_reactant))
+
         # Equation (12:17) from [1]
-        w_function = (intermediate_const / self.k_0_second_e) / np.power(xi_function2, self.alpha_second_e)
+        w_function = (intermediate_const / self.k_0_second_e) / (xi_function2 ** self.alpha_second_e)
+
         # Equation (12:18) from [1]
         v_function = 1 + (np.sqrt(self.diffusion_intermediate / self.diffusion_product) / xi_function2)
 
@@ -561,7 +566,7 @@ class EE(CyclicVoltammetryProtocol):
 
         i_constant = (self.cv_constant / self.velocity_constant) * intermediate_const
 
-        current1 = np.zeros(self.n_max)  # make lists?
+        current1 = np.zeros(self.n_max)
         current2 = np.zeros(self.n_max)
 
         for n in range(self.n_max):
@@ -580,7 +585,7 @@ class EE(CyclicVoltammetryProtocol):
         return potential, current
 
 
-class SquareScheme(CyclicVoltammetryProtocol):
+class SquareScheme(CyclicVoltammetryScheme):
     """
     Provides a current-potential profile for two quasi-reversible, one-electron transfers of homogeneously
     interconverting reactants (square scheme).
@@ -589,13 +594,13 @@ class SquareScheme(CyclicVoltammetryProtocol):
     Parameters
     ----------
     start_potential : float
-        Starting potential of scan (V vs reference).
+        Starting potential of scan (V vs. reference).
     switch_potential : float
-        Switching potential of scan (V vs reference).
+        Switching potential of scan (V vs. reference).
     reduction_potential : float
-        Reduction potential of the first one-electron transfer process (V vs reference).
+        Reduction potential of the first one-electron transfer process (V vs. reference).
     second_reduction_potential : float
-        Reduction potential of the second one-electron transfer process (V vs reference).
+        Reduction potential of the second one-electron transfer process (V vs. reference).
     scan_rate : float
         Potential sweep rate (V/s).
     c_bulk : float
@@ -628,7 +633,7 @@ class SquareScheme(CyclicVoltammetryProtocol):
         Default is 1.5 mm, a typical working electrode.
     temperature : float
         Temperature (K).
-        Default is 298 K (25C).
+        Default is 298.0 K (24.85C).
 
     """
 
@@ -675,7 +680,7 @@ class SquareScheme(CyclicVoltammetryProtocol):
         self.k_forward_second = k_forward_second
         self.k_backward_second = k_backward_second
 
-    def mechanism(self) -> tuple[list[float], np.ndarray]:
+    def simulate(self) -> tuple[list[float], np.ndarray]:
         """
         Simulates the CV for two quasi-reversible, one-electron transfers of homogeneously interconverting
         reactants (square scheme).
@@ -688,7 +693,7 @@ class SquareScheme(CyclicVoltammetryProtocol):
             Current values in full CV sweep.
         """
 
-        weights = self._semi_integrate_weights()
+        weights = self.semi_integration_weights
         potential, (xi_function1, xi_function2) = self.voltage_profile_setup(self.second_reduction_potential)
 
         k_sum1 = self.k_forward_first + self.k_backward_first
