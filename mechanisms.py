@@ -122,7 +122,7 @@ class CyclicVoltammetryScheme(ABC):
         for step in range(self.n_max):
             potential.append(theta)
             # Using <= here for exact midpoint
-            if step <= self.n_max // 2:
+            if step <= (self.n_max // 2) - 2:
                 theta -= self.delta_theta
             else:
                 theta += self.delta_theta
@@ -137,7 +137,7 @@ class CyclicVoltammetryScheme(ABC):
                                           (self.switch_potential + potential_excursion - potential_value))
 
             xi_functions.append(xi_function)
-
+        print(len(potential))
         return potential, xi_functions
 
     @abstractmethod
@@ -202,7 +202,7 @@ class E_rev(CyclicVoltammetryScheme):
             diffusion_product,
             step_size,
             disk_radius,
-            temperature
+            temperature,
         )
 
     def simulate(self) -> tuple[list, np.ndarray]:
@@ -291,7 +291,7 @@ class E_q(CyclicVoltammetryScheme):
             diffusion_product,
             step_size,
             disk_radius,
-            temperature
+            temperature,
         )
         self.alpha = alpha
         self.k_0 = k_0 / 100  # cm/s to m/s
@@ -394,7 +394,7 @@ class E_qC(CyclicVoltammetryScheme):
             diffusion_product,
             step_size,
             disk_radius,
-            temperature
+            temperature,
         )
         self.alpha = alpha
         self.k_0 = k_0 / 100  # cm/s to m/s
@@ -438,7 +438,8 @@ class E_qC(CyclicVoltammetryScheme):
                 sum_exp_weights += weighted_current * exp_factors[k]
 
             xi_diffusion = self.diffusion_ratio / ((1 + k_const) * xi_function[n])
-            numerator = self.cv_constant - ((1 + xi_diffusion) * sum_weights) - (k_const * xi_diffusion * sum_exp_weights)
+            numerator = (self.cv_constant - ((1 + xi_diffusion) * sum_weights)
+                         - (k_const * xi_diffusion * sum_exp_weights))
 
             xi_alpha = self.k_0 * (xi_function[n] ** self.alpha)
             denominator = 1 + (self.velocity_constant / xi_alpha) + (self.diffusion_ratio / xi_function[n])
@@ -522,7 +523,7 @@ class EE(CyclicVoltammetryScheme):
             diffusion_product,
             step_size,
             disk_radius,
-            temperature
+            temperature,
         )
         self.second_reduction_potential = second_reduction_potential
         self.diffusion_intermediate = diffusion_intermediate / 1e4  # cm^2/s to m^2/s
@@ -669,7 +670,8 @@ class SquareScheme(CyclicVoltammetryScheme):
             diffusion_product,
             step_size,
             disk_radius,
-            temperature)
+            temperature,
+        )
         self.second_reduction_potential = second_reduction_potential
         self.alpha = alpha
         self.alpha_second_e = alpha_second_e
