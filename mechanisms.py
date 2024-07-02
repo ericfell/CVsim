@@ -106,7 +106,7 @@ class CyclicVoltammetryScheme(ABC):
         -------
         potential : list
             Potential values in a full CV sweep.
-        xi_function : np.ndarray
+        xi_functions : list
             Values from exponential potential equation.
 
         """
@@ -132,12 +132,10 @@ class CyclicVoltammetryScheme(ABC):
             xi_function = np.zeros(self.n_max)
             for k in range(1, self.n_max + 1):
                 potential_excursion = self.scan_direction * abs(k * self.step_size + potential_diff)
-                xi_function[k-1] = np.exp(self.scan_direction *
-                                          self.nernst_constant *
-                                          (self.switch_potential + potential_excursion - potential_value))
+                xi_function[k-1] = np.exp(self.scan_direction * self.nernst_constant
+                                          * (self.switch_potential + potential_excursion - potential_value))
 
             xi_functions.append(xi_function)
-        print(len(potential))
         return potential, xi_functions
 
     @abstractmethod
