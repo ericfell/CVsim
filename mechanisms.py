@@ -83,14 +83,15 @@ class CyclicVoltammetryScheme(ABC):
         self.cv_constant = -F * self.scan_direction * self.electrode_area * c_bulk * self.velocity_constant
         self.delta_theta = self.scan_direction * self.step_size
 
-        for key, value in {'step_size': self.step_size,
-                           'scan_rate': scan_rate,
-                           'diffusion_reactant': self.diffusion_reactant,
-                           'diffusion_product': self.diffusion_product,
-                           'disk_radius': disk_radius,
-                           'c_bulk': c_bulk,
-                           'temperature': temperature,
-                           }.items():
+        for key, value in {
+            'step_size': self.step_size,
+            'scan_rate': scan_rate,
+            'diffusion_reactant': self.diffusion_reactant,
+            'diffusion_product': self.diffusion_product,
+            'disk_radius': disk_radius,
+            'c_bulk': c_bulk,
+            'temperature': temperature,
+        }.items():
             if value <= 0.0:
                 raise ValueError(f"'{key}' must be > 0.0")
 
@@ -563,10 +564,11 @@ class EE(CyclicVoltammetryScheme):
         if not 0.0 < self.alpha < 1.0 or not 0.0 < self.alpha_second_e < 1.0:
             raise ValueError("alpha parameters must be between 0.0 and 1.0")
 
-        for key, value in {'diffusion_intermediate': self.diffusion_intermediate,
-                           'k_0': self.k_0,
-                           'k_0_second_e': self.k_0_second_e,
-                           }.items():
+        for key, value in {
+            'diffusion_intermediate': self.diffusion_intermediate,
+            'k_0': self.k_0,
+            'k_0_second_e': self.k_0_second_e,
+        }.items():
             if value <= 0.0:
                 raise ValueError(f"'{key}' must be > 0.0")
 
