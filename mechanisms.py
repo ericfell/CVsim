@@ -146,8 +146,8 @@ class CyclicVoltammetryScheme(ABC):
             xi_function = np.zeros(self.n_max)
             for k in range(1, self.n_max + 1):
                 potential_excursion = self.scan_direction * abs(k * self.step_size + potential_diff)
-                xi_function[k-1] = np.exp(self.scan_direction * self.nernst_constant
-                                          * (self.switch_potential + potential_excursion - potential_value))
+                xi_function[k - 1] = np.exp(self.scan_direction * self.nernst_constant
+                                            * (self.switch_potential + potential_excursion - potential_value))
 
             xi_functions.append(xi_function)
         return potential, xi_functions
@@ -235,7 +235,7 @@ class E_rev(CyclicVoltammetryScheme):
         current = np.zeros(self.n_max)
 
         for n in range(self.n_max):
-            sum_weights = sum(weights[k] * current[n-k] for k in range(n))
+            sum_weights = sum(weights[k] * current[n - k] for k in range(n))
             xi_ratio = 1 + (self.diffusion_ratio / xi_function[n])
             current[n] = (self.cv_constant / xi_ratio) - sum_weights
         return potential, current
@@ -333,7 +333,7 @@ class E_q(CyclicVoltammetryScheme):
         current = np.zeros(self.n_max)
 
         for n in range(self.n_max):
-            sum_weights = sum(weights[k] * current[n-k] for k in range(n))
+            sum_weights = sum(weights[k] * current[n - k] for k in range(n))
             xi_ratio = 1 + (self.diffusion_ratio / xi_function[n])
             xi_alpha = self.k_0 * (xi_function[n] ** self.alpha)
             numerator = self.cv_constant - xi_ratio * sum_weights
@@ -422,7 +422,7 @@ class E_qC(CyclicVoltammetryScheme):
         if not 0.0 < self.alpha < 1.0:
             raise ValueError("'alpha' must be between 0.0 and 1.0")
 
-        for key, value in {'k_0 ': self.k_0, 'k_backward': self.k_backward}.items():
+        for key, value in {'k_0': self.k_0, 'k_backward': self.k_backward}.items():
             if value <= 0.0:
                 raise ValueError(f"'{key}' must be > 0.0")
 
@@ -454,14 +454,14 @@ class E_qC(CyclicVoltammetryScheme):
         exp_k_sum = np.exp(-k_sum)
         exp_factors[0] = exp_k_sum
         for n in range(1, self.n_max):
-            exp_factors[n] = exp_factors[n-1] * exp_k_sum
+            exp_factors[n] = exp_factors[n - 1] * exp_k_sum
 
         for n in range(self.n_max):
             sum_weights = 0
             sum_exp_weights = 0
 
             for k in range(n):
-                weighted_current = weights[k] * current[n-k]
+                weighted_current = weights[k] * current[n - k]
                 sum_weights += weighted_current
                 sum_exp_weights += weighted_current * exp_factors[k]
 
@@ -560,6 +560,16 @@ class EE(CyclicVoltammetryScheme):
         self.k_0 = k_0 / 100  # cm/s to m/s
         self.k_0_second_e = k_0_second_e / 100  # cm/s to m/s
 
+        if not 0.0 < self.alpha < 1.0 or not 0.0 < self.alpha_second_e < 1.0:
+            raise ValueError("alpha parameters must be between 0.0 and 1.0")
+
+        for key, value in {'diffusion_intermediate': self.diffusion_intermediate,
+                           'k_0': self.k_0,
+                           'k_0_second_e': self.k_0_second_e,
+                           }.items():
+            if value <= 0.0:
+                raise ValueError(f"'{key}' must be > 0.0")
+
     def simulate(self) -> tuple[list[float], list[float]]:
         """
         Simulates the CV for two successive one-electron quasi-reversible transfer (EE) mechanism.
@@ -599,8 +609,8 @@ class EE(CyclicVoltammetryScheme):
         current2 = np.zeros(self.n_max)
 
         for n in range(self.n_max):
-            sum1 = sum(weights[k] * current1[n-k] for k in range(n))
-            sum2 = sum(weights[k] * current2[n-k] for k in range(n))
+            sum1 = sum(weights[k] * current1[n - k] for k in range(n))
+            sum2 = sum(weights[k] * current2[n - k] for k in range(n))
 
             current1[n] = ((w_v_sum[n] * xi_function1[n] * i_constant
                             - ((y_function[n] * w_v_sum[n] - 1) * sum1) + w_function[n] * sum2)
@@ -710,6 +720,23 @@ class SquareScheme(CyclicVoltammetryScheme):
         self.k_forward_second = k_forward_second
         self.k_backward_second = k_backward_second
 
+        if not 0.0 < self.alpha < 1.0 or not 0.0 < self.alpha_second_e < 1.0:
+            raise ValueError("alpha parameters must be between 0.0 and 1.0")
+
+        for key, value in {
+            'k_0': self.k_0,
+            'k_0_second_e': self.k_0_second_e,
+            'k_forward_first': self.k_forward_first,
+            'k_backward_first': self.k_backward_first,
+            'k_forward_second': self.k_forward_second,
+            'k_backward_second': self.k_backward_second,
+        }.items():
+            if key not in ['k_forward_first', 'k_forward_second'] and value <= 0.0:
+                raise ValueError(f"'{key}' must be > 0.0")
+
+            if value < 0.0:
+                raise ValueError(f"'{key}' must be >= 0.0")
+
     def simulate(self) -> tuple[list[float], np.ndarray]:
         """
         Simulates the CV for two quasi-reversible, one-electron transfers of homogeneously interconverting
@@ -735,14 +762,14 @@ class SquareScheme(CyclicVoltammetryScheme):
         current2 = np.zeros(self.n_max)
 
         for n in range(self.n_max):
-            sum1 = sum(weights[k] * current1[n-k] for k in range(n))
-            sum2 = sum(weights[k] * current2[n-k] for k in range(n))
+            sum1 = sum(weights[k] * current1[n - k] for k in range(n))
+            sum2 = sum(weights[k] * current2[n - k] for k in range(n))
             sum_sums = sum1 + sum2
 
-            sum1_exp1 = sum((weights[k] * current1[n-k] * np.exp((-k-1) * k_sum1)) for k in range(n))
-            sum1_exp2 = sum((weights[k] * current1[n-k] * np.exp((-k-1) * k_sum2)) for k in range(n))
-            sum2_exp1 = sum((weights[k] * current2[n-k] * np.exp((-k-1) * k_sum1)) for k in range(n))
-            sum2_exp2 = sum((weights[k] * current2[n-k] * np.exp((-k-1) * k_sum2)) for k in range(n))
+            sum1_exp1 = sum((weights[k] * current1[n - k] * np.exp((-k - 1) * k_sum1)) for k in range(n))
+            sum1_exp2 = sum((weights[k] * current1[n - k] * np.exp((-k - 1) * k_sum2)) for k in range(n))
+            sum2_exp1 = sum((weights[k] * current2[n - k] * np.exp((-k - 1) * k_sum1)) for k in range(n))
+            sum2_exp2 = sum((weights[k] * current2[n - k] * np.exp((-k - 1) * k_sum2)) for k in range(n))
 
             current1[n] = (((self.cv_constant / (1 + big_k1))
                             - ((sum_sums + (big_k1 * sum1_exp1) - sum2_exp1) / (1 + big_k1))
