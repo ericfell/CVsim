@@ -83,6 +83,20 @@ class CyclicVoltammetryScheme(ABC):
         self.cv_constant = -F * self.scan_direction * self.electrode_area * c_bulk * self.velocity_constant
         self.delta_theta = self.scan_direction * self.step_size
 
+        for key, value in {'step_size': self.step_size,
+                           'scan_rate': scan_rate,
+                           'diffusion_reactant': self.diffusion_reactant,
+                           'diffusion_product': self.diffusion_product,
+                           'disk_radius': disk_radius,
+                           'c_bulk': c_bulk,
+                           'temperature': temperature,
+                           }.items():
+            if value <= 0.0:
+                raise ValueError(f"'{key}' must be > 0.0")
+
+        if self.start_potential == self.switch_potential:
+            raise ValueError("'start_potential' and 'switch_potential' must be different")
+
         # Weighting factors for semi-integration method.
         # This is equation (5:5) from [1].
         weights = [1.0] * self.n_max
@@ -294,6 +308,12 @@ class E_q(CyclicVoltammetryScheme):
         self.alpha = alpha
         self.k_0 = k_0 / 100  # cm/s to m/s
 
+        if not 0.0 < self.alpha < 1.0:
+            raise ValueError("'alpha' must be between 0.0 and 1.0")
+
+        if self.k_0 <= 0.0:
+            raise ValueError("'k_0' must be > 0.0")
+
     def simulate(self) -> tuple[list, np.ndarray]:
         """
         Simulates the CV for a quasi-reversible one electron transfer mechanism.
@@ -398,6 +418,16 @@ class E_qC(CyclicVoltammetryScheme):
         self.k_0 = k_0 / 100  # cm/s to m/s
         self.k_forward = k_forward
         self.k_backward = k_backward
+
+        if not 0.0 < self.alpha < 1.0:
+            raise ValueError("'alpha' must be between 0.0 and 1.0")
+
+        for key, value in {'k_0 ': self.k_0, 'k_backward': self.k_backward}.items():
+            if value <= 0.0:
+                raise ValueError(f"'{key}' must be > 0.0")
+
+        if self.k_forward < 0.0:
+            raise ValueError("'k_forward' must be >= 0.0")
 
     def simulate(self) -> tuple[list, np.ndarray]:
         """
