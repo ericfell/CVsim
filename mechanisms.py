@@ -323,6 +323,120 @@ class E_q(CyclicVoltammetryScheme):
         return potential, current
 
 
+class CE_r(CyclicVoltammetryScheme):
+    """
+    Provides a current-potential profile for a reversible one electron transfer preceded by a
+    first order (or pseudo first order) homogeneous chemical mechanism.
+    This is equation (9:8) from [1].
+
+    Parameters
+    ----------
+    start_potential : float
+        Starting potential of scan (V vs. reference).
+    switch_potential : float
+        Switching potential of scan (V vs. reference).
+    reduction_potential : float
+        Reduction potential of the one-electron transfer process (V vs. reference).
+    scan_rate : float
+        Potential sweep rate (V/s).
+    c_bulk : float
+        Bulk concentration of redox species (mM or mol/m^3).
+    diffusion_reactant : float
+        Diffusion coefficient of reactant (cm^2/s).
+    diffusion_product : float
+        Diffusion coefficient of product (cm^2/s).
+    k_forward : float
+        First order forward chemical rate constant (1/s).
+    k_backward : float
+        First order backward chemical rate constant (1/s).
+    step_size : float
+        Voltage increment during CV scan (mV).
+        Default is 1.0 mV, a typical potentiostat default.
+    disk_radius : float
+        Radius of disk macro-electrode (mm).
+        Default is 1.5 mm, a typical working electrode.
+    temperature : float
+        Temperature (K).
+        Default is 298.0 K (24.85C).
+
+    """
+
+    def __init__(
+            self,
+            start_potential: float,
+            switch_potential: float,
+            reduction_potential: float,
+            scan_rate: float,
+            c_bulk: float,
+            diffusion_reactant: float,
+            diffusion_product: float,
+            k_forward: float,
+            k_backward: float,
+            step_size: float = 1.0,
+            disk_radius: float = 1.5,
+            temperature: float = 298.0,
+    ) -> None:
+        super().__init__(
+            start_potential,
+            switch_potential,
+            reduction_potential,
+            scan_rate,
+            c_bulk,
+            diffusion_reactant,
+            diffusion_product,
+            step_size,
+            disk_radius,
+            temperature,
+        )
+        self.k_forward = k_forward
+        self.k_backward = k_backward
+
+    def simulate(self) -> tuple[list, np.ndarray]:
+        """
+        Simulates the CV for a reversible one electron transfer preceded by a first order homogeneous
+        chemical transformation mechanism.
+
+        Returns
+        -------
+        potential : list
+            Potential values in full CV sweep.
+        current : np.ndarray
+            Current values in full CV sweep.
+
+        """
+
+        k_sum = self.k_forward + self.k_backward
+        k_const = self.k_forward / self.k_backward
+        k_const_frac = (1 / k_const) + 1
+        weights = self.semi_integration_weights
+        potential, [xi_function] = self.voltage_profile_setup()
+
+        current = np.zeros(self.n_max)
+        exp_factors = np.zeros(self.n_max)
+
+        exp_k_sum = np.exp(-k_sum)
+        exp_factors[0] = exp_k_sum
+        for n in range(1, self.n_max):
+            exp_factors[n] = exp_factors[n-1] * exp_k_sum
+
+        for n in range(self.n_max):
+            sum_weights = 0
+            sum_exp_weights = 0
+
+            for k in range(n):
+                weighted_current = weights[k] * current[n-k]
+                sum_weights += weighted_current
+                sum_exp_weights += weighted_current * exp_factors[k]
+
+            xi_diffusion = self.diffusion_ratio * k_const_frac / xi_function[n]
+            numerator = self.cv_constant - ((1 + xi_diffusion) * sum_weights) - ((k_const_frac - 1) * sum_exp_weights)
+
+            denominator = k_const_frac * (1 + (self.diffusion_ratio / xi_function[n]))
+
+            current[n] = numerator / denominator
+
+        return potential, current
+
 class E_qC(CyclicVoltammetryScheme):
     """
     Provides a current-potential profile for a quasi-reversible one electron transfer, followed by a reversible first
