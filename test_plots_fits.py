@@ -1,52 +1,52 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from one_electron_CV import OneElectronCV
-from two_electron_CV import TwoElectronCV
-import scipy.constants as spc
 from scipy.optimize import curve_fit
 
-F = spc.physical_constants['Faraday constant'][0]
-R = spc.R
+from mechanisms import E_rev, E_q, E_qC, EE, SquareScheme
+
 
 # Part A: how to simulate schemes
 
 # example 1 electron schemes
-setup = OneElectronCV(-0.4, 0.4, 0, 1, 1, 1, 1e-6, 1e-6, 5, 298)
-potential1, current1 = setup.reversible()
-potential2, current2 = setup.quasireversible(0.4, 1e-3)
+
+potential1, current1 = E_rev(-0.4, 0.4, 0.0, 1.0, 1.0, 1e-6, 1e-6).simulate()
+potential2, current2 = E_q(0.3, -0.3, 0.0, 1.0, 1.0, 1e-6, 1e-6, 0.4, 1e-3).simulate()
+
 
 # example 2 electron scheme
-setup2 = TwoElectronCV(0.5, -0.5, 0.1, -0.05, 1, 1, 1, 1e-6, 1e-6, 1e-6, 5, 298)
-potential3, current3 = setup2.quasireversible(0.5, 0.5, 1e-3, 1e-4)
 
-plt.figure(1)
-plt.plot(potential1, [x*1000 for x in current1], label='$E_{r}$')
-plt.plot(potential2, [x*1000 for x in current2], label='$E_{q}$')
-plt.plot(potential3, [x*1000 for x in current3], label='$E_{q}E_{q}$')
-plt.xlabel('Potential (V)')
-plt.ylabel('Current (mA)')
-plt.tight_layout()
-plt.legend()
+potential3, current3 = EE(0.5, -0.5, 0.1, -0.05, 1.0, 1, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1e-4).simulate()
+
+
+fig, ax = plt.subplots()
+ax.plot(potential1, [x*1000 for x in current1], label='$E_{r}$')
+ax.plot(potential2, [x*1000 for x in current2], label='$E_{q}$')
+ax.plot(potential3, [x*1000 for x in current3], label='$E_{q}E_{q}$')
+ax.set_xlabel('Potential (V)')
+ax.set_ylabel('Current (mA)')
+ax.legend()
 plt.show()
+
 ##############################################################################
 ##############################################################################
 # Part B: how to fit experimental data
 
-#for simplicity an 'experiment' dataset is simulated and then fit. Ideally you
-#would input real data to fit
+# for simplicity an 'experiment' dataset is simulated and then fit. Ideally you
+# would input real data to fit
 
 ################## 1) 'experiment' data 
-test1 =  OneElectronCV(0.3, -0.3, 0, 1, 1, 1, 1.5e-6, 1.1e-6, 5, 298)
-potential, current = test1.quasireversible(0.5, 5e-4) 
-plt.figure(2)
-plt.plot(potential, [x*1000 for x in current], label='experiment')
+#test1 =  OneElectronCV(0.3, -0.3, 0, 1, 1, 1, 1.5e-6, 1.1e-6, 5, 298)
+#potential, current = test1.quasireversible(0.5, 5e-4)
+fig, ax = plt.subplots()
+ax.plot(potential2, [x*1000 for x in current2], label='experiment')
 
 ################## 2) turn test data into real function
-new_p = np.linspace(1, test1.N_max, test1.N_max)
-plt.figure(3)
-plt.plot(new_p, [x*1000 for x in current], label='experiment')
-
+new_p = np.linspace(1, len(potential2), len(potential2))# test1.N_max, test1.N_max)
+#plt.figure(3)
+ax.plot(new_p, [x*1000 for x in current2], label='experiment')
+plt.show()
+"""
 ################## 3) fit curve to data of real function
 def func(x, a, b, c): #modify variables as needed
     E_start = x[-1]
@@ -86,4 +86,6 @@ plt.xlabel('Timestep')
 plt.ylabel("Residuals ($\mu$A) ")
 plt.tight_layout()
 plt.show()
+
+"""
 
