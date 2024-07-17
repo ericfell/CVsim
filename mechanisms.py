@@ -584,6 +584,159 @@ class EE(CyclicVoltammetryScheme):
         return potential, current
 
 
+class ECE(CyclicVoltammetryScheme):
+    """
+    Provides a current-potential profile for two successive one-electron reversible transfers coupled by
+    homogeneous kinetics.
+    This is the sum of equations (13:10) and (13:11) from [1].
+
+    Parameters
+    ----------
+    start_potential : float
+        Starting potential of scan (V vs. reference).
+    switch_potential : float
+        Switching potential of scan (V vs. reference).
+    reduction_potential : float
+        Reduction potential of the first one-electron transfer process (V vs. reference).
+    second_reduction_potential : float
+        Reduction potential of the second one-electron transfer process (V vs. reference).
+    scan_rate : float
+        Potential sweep rate (V/s).
+    c_bulk : float
+        Bulk concentration of redox species (mM or mol/m^3).
+    diffusion_reactant : float
+        Diffusion coefficient of reactant (cm^2/s).
+    diffusion_intermediate : float
+        Diffusion coefficient of intermediate (cm^2/s).
+    diffusion_product : float
+        Diffusion coefficient of product (cm^2/s).
+    k_forward : float
+        First order forward chemical rate constant (1/s).
+    k_backward : float
+        First order backward chemical rate constant (1/s).
+    step_size : float
+        Voltage increment during CV scan (mV).
+        Default is 1.0 mV, a typical potentiostat default.
+    disk_radius : float
+        Radius of disk macro-electrode (mm).
+        Default is 1.5 mm, a typical working electrode.
+    temperature : float
+        Temperature (K).
+        Default is 298.0 K (24.85C).
+
+    """
+
+    def __init__(
+            self,
+            start_potential: float,
+            switch_potential: float,
+            reduction_potential: float,
+            second_reduction_potential: float,
+            scan_rate: float,
+            c_bulk: float,
+            diffusion_reactant: float,
+            diffusion_intermediate: float,
+            diffusion_product: float,
+            k_forward: float,
+            k_backward: float,
+            step_size: float = 1.0,
+            disk_radius: float = 1.5,
+            temperature: float = 298.0,
+    ) -> None:
+        super().__init__(
+            start_potential,
+            switch_potential,
+            reduction_potential,
+            scan_rate,
+            c_bulk,
+            diffusion_reactant,
+            diffusion_product,
+            step_size,
+            disk_radius,
+            temperature,
+        )
+        self.second_reduction_potential = second_reduction_potential
+        self.diffusion_intermediate = diffusion_intermediate / 1e4  # cm^2/s to m^2/s
+        self.k_forward = k_forward
+        self.k_backward = k_backward
+
+    def simulate(self) -> tuple[list[float], list[float]]:
+        """
+        Simulates the CV for two successive one-electron reversible transfers coupled by homogeneous
+         chemical kinetics (ECE) mechanism.
+
+        Returns
+        -------
+        potential : list
+            Potential values in full CV sweep.
+        current : list
+            Current values in full CV sweep.
+
+        """
+
+        ir_diffusion_ratio = (self.diffusion_intermediate / self.diffusion_reactant) ** 0.5
+        ip_diffusion_ratio = (self.diffusion_intermediate / self.diffusion_product) ** 0.5
+        intermediate_const = (self.diffusion_intermediate / self.delta_t) ** 0.5
+
+        k_sum = self.k_forward + self.k_backward
+        k_const = self.k_forward / self.k_backward
+
+        weights = self.semi_integration_weights
+        potential, (xi_function1, xi_function2) = self.voltage_profile_setup(self.second_reduction_potential)
+
+        i_constant = (self.cv_constant / self.velocity_constant) * intermediate_const
+
+        current1 = np.zeros(self.n_max)
+        current2 = np.zeros(self.n_max)
+
+        exp_factors1 = np.zeros(self.n_max)
+
+        exp_k_sum = np.exp(-k_sum)
+        exp_factors1[0] = exp_k_sum
+        for n in range(1, self.n_max):
+            exp_factors1[n] = exp_factors1[n - 1] * exp_k_sum
+
+        exp_factors2 = np.array(exp_factors1)
+
+        for n in range(self.n_max):
+            sum_weights1 = 0
+            sum_exp_weights1 = 0
+            sum_weights2 = 0
+            sum_exp_weights2 = 0
+
+            for k in range(n):
+                weighted_current1 = weights[k] * current1[n - k]
+                sum_weights1 += weighted_current1
+                sum_exp_weights1 += weighted_current1 * exp_factors1[k]
+
+                weighted_current2 = weights[k] * current2[n - k]
+                sum_weights2 += weighted_current2
+                sum_exp_weights2 += weighted_current2 * exp_factors2[k]
+
+            # equation (13:10)
+            xi_diffusion1 = 1 / ((1 + k_const) * xi_function1[n])
+
+            numerator1 = (i_constant - ((ir_diffusion_ratio + xi_diffusion1) * sum_weights1)
+                          - (xi_diffusion1 * (k_const * sum_exp_weights1 - sum_weights2 + sum_exp_weights2)))
+
+            denominator1 = ir_diffusion_ratio + (xi_diffusion1 * (1 + k_const))
+
+            current1[n] = numerator1 / denominator1
+
+            # equation (13:11)
+            xi_diffusion2 = ip_diffusion_ratio / xi_function2[n]
+
+            numerator2 = ((-1 * sum_weights2 * (xi_diffusion2 + (k_const / (1 + k_const))))
+                          - (sum_exp_weights2 + (k_const * (sum_exp_weights1 - sum_weights1))))
+
+            denominator2 = 1 + xi_diffusion2
+
+            current2[n] = numerator2 / denominator2
+
+        current = current1 + current2
+        return potential, current
+
+
 class SquareScheme(CyclicVoltammetryScheme):
     """
     Provides a current-potential profile for two quasi-reversible, one-electron transfers of homogeneously
