@@ -1,8 +1,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from one_electron_CV import OneElectronCV
-from two_electron_CV import TwoElectronCV
+from mechanisms import E_rev, E_q, E_qC, EE, SquareScheme
 import scipy.constants as spc
 from scipy.optimize import curve_fit
 
@@ -12,22 +11,20 @@ R = spc.R
 # Part A: how to simulate schemes
 
 # example 1 electron schemes
-setup = OneElectronCV(-0.4, 0.4, 0, 1, 1, 1, 1e-6, 1e-6, 5, 298)
-potential1, current1 = setup.reversible()
-potential2, current2 = setup.quasireversible(0.4, 1e-3)
+potential1, current1 = E_q(0.3, -0.3, 0.0, 1.0, 1.0, 1e-5, 1e-5, 0.3, 1e-3).simulate()
+potential2, current2 = E_qC(0.3, -0.3, 0.0, 1.0, 1.0, 1e-5, 1e-5, 0.3, 1e-3, 0.1, 1).simulate()
 
 # example 2 electron scheme
-setup2 = TwoElectronCV(0.5, -0.5, 0.1, -0.05, 1, 1, 1, 1e-6, 1e-6, 1e-6, 5, 298)
-potential3, current3 = setup2.quasireversible(0.5, 0.5, 1e-3, 1e-4)
+potential3, current3 = EE(-0.5, 0.4, -0.1, 0.1, 1.0, 1, 1e-5, 1e-5, 1e-5, 0.5, 0.5, 1e-2, 5e-3).simulate()
 
-plt.figure(1)
-plt.plot(potential1, [x*1000 for x in current1], label='$E_{r}$')
-plt.plot(potential2, [x*1000 for x in current2], label='$E_{q}$')
-plt.plot(potential3, [x*1000 for x in current3], label='$E_{q}E_{q}$')
-plt.xlabel('Potential (V)')
-plt.ylabel('Current (mA)')
-plt.tight_layout()
-plt.legend()
+fig, ax = plt.subplots()
+ax.plot(potential1, [x*1000 for x in current1], label='$E_{q}$')
+ax.plot(potential2, [x*1000 for x in current2], label='$E_{q}C$')
+ax.plot(potential3, [x*1000 for x in current3], label='$E_{q}E_{q}$')
+ax.xlabel('Potential (V)')
+ax.ylabel('Current (mA)')
+ax.tight_layout()
+ax.legend()
 plt.show()
 ##############################################################################
 ##############################################################################
@@ -37,16 +34,15 @@ plt.show()
 #would input real data to fit
 
 ################## 1) 'experiment' data 
-test1 =  OneElectronCV(0.3, -0.3, 0, 1, 1, 1, 1.5e-6, 1.1e-6, 5, 298)
-potential, current = test1.quasireversible(0.5, 5e-4) 
-plt.figure(2)
-plt.plot(potential, [x*1000 for x in current], label='experiment')
 
+fig, ax = plt.subplots()
+ax.plot(potential1, [x*1000 for x in current1], label='experiment')
+plt.show()
 ################## 2) turn test data into real function
-new_p = np.linspace(1, test1.N_max, test1.N_max)
-plt.figure(3)
-plt.plot(new_p, [x*1000 for x in current], label='experiment')
-
+new_p = np.linspace(1, 1200, 1200)
+fig, ax = plt.subplots()
+ax.plot(new_p, [x*1000 for x in current1], label='experiment')
+plt.show()
 ################## 3) fit curve to data of real function
 def func(x, a, b, c): #modify variables as needed
     E_start = x[-1]
