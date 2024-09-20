@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 
-from mechanisms import CyclicVoltammetryScheme, E_rev, E_q, E_qC, EE, SquareScheme
+from cvsim.mechanisms import CyclicVoltammetryScheme, E_rev, E_q, E_qC, EE, SquareScheme
 
 
 class TestCyclicVoltammetryScheme:
