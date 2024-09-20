@@ -10,3 +10,17 @@ class TestCyclicVoltammetryScheme:
         with pytest.raises(TypeError):
             CyclicVoltammetryScheme()
 
+    def test_potential_scan(self):
+        test_v = E_rev(0.5, -0.5, 0, 1, 1, 1e-6, 1e-6, step_size=500)
+        v,i = test_v.simulate()
+        assert (v == np.array([0.0, -0.5, 0.0, 0.5])).all()#v == np.array([0.0, -0.5, 0.0, 0.5])
+
+        test_v2 = E_rev(-0.1, 0.4, 0, 1, 1, 1e-6, 1e-6, step_size=100)
+        v2, i2 = test_v2.simulate()
+        assert (v2 == np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.3, 0.2, 0.1, 0.0, -0.1])).all()
+
+        test_v3 = E_rev(-0.2, -0.05, -0.1, 1, 1, 1e-6, 1e-6, step_size=50)
+        v3, i3 = test_v3.simulate()
+        assert (v3 == np.array([-0.15, -0.1, -0.05, -0.1, -0.15, -0.2])).all()
+
+
