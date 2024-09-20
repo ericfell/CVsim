@@ -1,0 +1,32 @@
+# pyproject.toml
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cvsim"
+version = "0.0.1"
+authors = [
+    { name="Eric Fell", email="efell@g.harvard.edu" },
+]
+description = "A package for cyclic voltammetry simulation via the semi-analytical method"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["scipy"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+keywords = ["electrochemistry", "cyclic voltammetry"]
+
+[project.urls]
+Homepage = "https://github.com/ericfell/CVsim"
+
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+pythonpath = "src"
+testpaths = "tests"

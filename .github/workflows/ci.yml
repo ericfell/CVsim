@@ -31,7 +31,7 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Mypy static type check
-        run: mypy mechanisms.py
+        run: mypy src/
 
       - name: pylint
-        run: pylint mechanisms.py
+        run: pylint src/
