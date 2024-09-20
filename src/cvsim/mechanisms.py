@@ -131,7 +131,7 @@ class CyclicVoltammetryScheme(ABC):
             electron_transfers.append(second_reduction_potential)
 
         thetas = [int((i - self.delta_theta)*1000) for i in [self.start_potential, self.switch_potential]]
-        forward_scan = np.arange(*thetas, step=self.step_size * -1000 * self.scan_direction)
+        forward_scan = np.arange(thetas[0], thetas[1], step=self.step_size * -1000 * self.scan_direction)
         reverse_scan = np.append(forward_scan[-2::-1], int(self.start_potential*1000))
         potential = np.concatenate([forward_scan, reverse_scan]) / 1000
 
