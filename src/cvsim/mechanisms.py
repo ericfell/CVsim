@@ -105,7 +105,7 @@ class CyclicVoltammetryScheme(ABC):
             weights[n] = (2 * n - 1) * (weights[n - 1] / (2 * n))
         self.semi_integration_weights = weights
 
-    def voltage_profile_setup(self, second_reduction_potential: float | None = None) -> tuple[list[float], list]:
+    def voltage_profile_setup(self, second_reduction_potential: float | None = None) -> tuple[np.ndarray, list]:
         """
         Compute the potential steps for voltage profile and for exponential Nernstian/Butler-Volmer function.
         This is equation (6:1) from [1].
@@ -119,7 +119,7 @@ class CyclicVoltammetryScheme(ABC):
 
         Returns
         -------
-        potential : list
+        potential : np.ndarray
             Potential values in a full CV sweep.
         xi_functions : list
             Values from exponential potential equation.
@@ -130,19 +130,13 @@ class CyclicVoltammetryScheme(ABC):
         if second_reduction_potential is not None:
             electron_transfers.append(second_reduction_potential)
 
-        theta = self.start_potential - self.delta_theta
-        xi_functions = []
-        potential = []
-
-        for step in range(self.n_max):
-            potential.append(theta)
-            # Using <= here for exact midpoint
-            if step <= (self.n_max // 2) - 2:
-                theta -= self.delta_theta
-            else:
-                theta += self.delta_theta
+        thetas = [int((i - self.delta_theta)*1000) for i in [self.start_potential, self.switch_potential]]
+        forward_scan = np.arange(thetas[0], thetas[1], step=self.step_size * -1000 * self.scan_direction)
+        reverse_scan = np.append(forward_scan[-2::-1], int(self.start_potential*1000))
+        potential = np.concatenate([forward_scan, reverse_scan]) / 1000
 
         potential_diff = self.scan_direction * (self.switch_potential - self.start_potential)
+        xi_functions = []
         for potential_value in electron_transfers:
             xi_function = np.zeros(self.n_max)
             for k in range(1, self.n_max + 1):
@@ -154,7 +148,7 @@ class CyclicVoltammetryScheme(ABC):
         return potential, xi_functions
 
     @abstractmethod
-    def simulate(self) -> tuple[list, np.ndarray]:
+    def simulate(self) -> tuple[np.ndarray, np.ndarray]:
         """Simulates current-potential profile for desired mechanism"""
         raise NotImplementedError
 
@@ -218,18 +212,19 @@ class E_rev(CyclicVoltammetryScheme):
             temperature,
         )
 
-    def simulate(self) -> tuple[list, np.ndarray]:
+    def simulate(self) -> tuple[np.ndarray, np.ndarray]:
         """
         Simulates the CV for a reversible one electron transfer mechanism.
 
         Returns
         -------
-        potential : list
+        potential : np.ndarray
             Potential values in full CV sweep.
         current : np.ndarray
             Current values in full CV sweep.
 
         """
+
         weights = self.semi_integration_weights
         potential, [xi_function] = self.voltage_profile_setup()
 
@@ -315,13 +310,13 @@ class E_q(CyclicVoltammetryScheme):
         if self.k_0 <= 0.0:
             raise ValueError("'k_0' must be > 0.0")
 
-    def simulate(self) -> tuple[list, np.ndarray]:
+    def simulate(self) -> tuple[np.ndarray, np.ndarray]:
         """
         Simulates the CV for a quasi-reversible one electron transfer mechanism.
 
         Returns
         -------
-        potential : list
+        potential : np.ndarray
             Potential values in full CV sweep.
         current : np.ndarray
             Current values in full CV sweep.
@@ -430,14 +425,14 @@ class E_qC(CyclicVoltammetryScheme):
         if self.k_forward < 0.0:
             raise ValueError("'k_forward' must be >= 0.0")
 
-    def simulate(self) -> tuple[list, np.ndarray]:
+    def simulate(self) -> tuple[np.ndarray, np.ndarray]:
         """
         Simulates the CV for a quasi-reversible one electron transfer followed by a reversible first order homogeneous
         chemical transformation mechanism.
 
         Returns
         -------
-        potential : list
+        potential : np.ndarray
             Potential values in full CV sweep.
         current : np.ndarray
             Current values in full CV sweep.
@@ -572,15 +567,15 @@ class EE(CyclicVoltammetryScheme):
             if value <= 0.0:
                 raise ValueError(f"'{key}' must be > 0.0")
 
-    def simulate(self) -> tuple[list[float], list[float]]:
+    def simulate(self) -> tuple[np.ndarray, np.ndarray]:
         """
         Simulates the CV for two successive one-electron quasi-reversible transfer (EE) mechanism.
 
         Returns
         -------
-        potential : list
+        potential : np.ndarray
             Potential values in full CV sweep.
-        current : list
+        current : np.ndarray
             Current values in full CV sweep.
 
         """
@@ -739,16 +734,16 @@ class SquareScheme(CyclicVoltammetryScheme):
             if value < 0.0:
                 raise ValueError(f"'{key}' must be >= 0.0")
 
-    def simulate(self) -> tuple[list[float], np.ndarray]:
+    def simulate(self) -> tuple[np.ndarray, np.ndarray]:
         """
         Simulates the CV for two quasi-reversible, one-electron transfers of homogeneously interconverting
         reactants (square scheme).
 
         Returns
         -------
-        potential : list
+        potential : np.ndarray
             Potential values in full CV sweep.
-        current : list
+        current : np.ndarray
             Current values in full CV sweep.
         """
 

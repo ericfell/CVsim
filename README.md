@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/ericfell/CVsim/graph/badge.svg?token=90223DIBVS)](https://codecov.io/gh/ericfell/CVsim)
+
 # CVsim
 Semi-analytical method<sup>1</sup> for simulating cyclic voltammograms on a disk macroelectrode, using a semiintegration algorithm. In the limit of infinitely small potential steps, this algorithm is an exact solution. Due to the precision of standard potentiostats simulations using potential steps of 1-5 mV typically provide a reasonable accuracy-computing time trade-off, where accuracy sanity checks (e.g. Randles-Sevcik relationship for E<sub>r</sub> and E<sub>q</sub> mechanisms) have been performed.
 
