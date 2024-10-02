@@ -10,7 +10,7 @@ from scipy.optimize import curve_fit
 from .mechanisms import CyclicVoltammetryScheme, E_rev, E_q, E_qC, EE, SquareScheme
 
 
-class HelperClass(ABC):
+class FitMechanism(ABC):
     """
     Scheme for fitting CVs
 
@@ -31,23 +31,21 @@ class HelperClass(ABC):
         self.step_size = step_size
         self.disk_radius = disk_radius
         self.temperature = temperature
-        self.start_voltage = int(round(voltage_to_fit[0] * 1000))
+        self.start_voltage = round(voltage_to_fit[0] * 1000)
 
-        if int(round(voltage_to_fit[10] * 1000)) > self.start_voltage:  # scan starts towards more positive
-            self.reverse_voltage = int(round(max(voltage_to_fit) * 1000))
+        if round(voltage_to_fit[10] * 1000) > self.start_voltage:  # scan starts towards more positive
+            self.reverse_voltage = round(max(voltage_to_fit) * 1000)
         else:  # scan starts towards more negative
-            self.reverse_voltage = int(round(min(voltage_to_fit) * 1000))
+            self.reverse_voltage = round(min(voltage_to_fit) * 1000)
 
         # make a cleaner x array
         scan_direction = -1 if self.start_voltage < self.reverse_voltage else 1
         delta_theta = scan_direction * self.step_size
 
-        thetas = [int(round((i - delta_theta))) for i in [self.start_voltage, self.reverse_voltage]]
+        thetas = [round((i - delta_theta)) for i in [self.start_voltage, self.reverse_voltage]]
         forward_scan = np.arange(thetas[0], thetas[1], step=delta_theta * -1)
         reverse_scan = np.append(forward_scan[-2::-1], self.start_voltage)
         self.voltage_to_fit = np.concatenate([forward_scan, reverse_scan]) / 1000
-        # TODO is below needed for real (not simulated) raw data?
-        #self.voltage_to_fit = self.voltage_to_fit[1:]  # semi-analytical method doesnt use initial potential
 
     @abstractmethod
     def fit(self, *args):
@@ -55,7 +53,7 @@ class HelperClass(ABC):
         return NotImplementedError
 
 
-class FitE_rev(HelperClass):
+class FitE_rev(FitMechanism):
     """
     TODO
     """
@@ -96,6 +94,7 @@ class FitE_rev(HelperClass):
             'diffusion_reactant': [1e-6, 5e-8, 1e-4],
             'diffusion_product': [1e-6, 5e-8, 1e-4],
         }
+        # TODO incorrect inputs, error handling
 
     def fit(self,
             reduction_potential: None | float | tuple[float, float] | tuple[float, float, float] = None,
@@ -111,10 +110,14 @@ class FitE_rev(HelperClass):
         }
         fit_vars = {k: v for k, v in fit_vars.items() if v is not None}
 
+        for key, val in fit_vars.items():
+            if isinstance(val, tuple) and len(val) not in [2, 3]:
+                raise ValueError(f"'{key}' allowed types: None, float, tuple[float, float], tuple[float, float, float]")
+
         # check intersection of fixed_vars / fit_vars dicts. if so raise error
-        intersection_errors = (self.fixed_vars.keys() & fit_vars.keys())
+        intersection_errors = self.fixed_vars.keys() & fit_vars.keys()
         if intersection_errors:
-            raise ValueError("Cannot input fixed value and guess value for same parameter")
+            raise ValueError(f"Cannot input fixed value and guess value for {*intersection_errors,}")
 
         # get params that will be fit
         fitting_params = [
@@ -133,19 +136,22 @@ class FitE_rev(HelperClass):
                 fit_default_vars[param][0] = value
             elif isinstance(value, tuple) and len(value) == 2:
                 # Lower and upper bound
+                if value[0] >= value[1]:
+                    raise ValueError("Lower bound must be lower than upper bound")
                 fit_default_vars[param][1] = value[0]
                 fit_default_vars[param][2] = value[1]
             elif isinstance(value, tuple) and len(value) == 3:
+                if value[1] >= value[2]:
+                    raise ValueError("Lower bound must be lower than upper bound")
                 fit_default_vars[param] = value
 
-        for param, value in fit_default_vars.items():
-            if value[1] > value[0] or value[0] > value[2]:
+        for param, (initial, lower, upper) in fit_default_vars.items():
+            if not lower < initial < upper:
                 # if default initial guess is outside bounds, set guess to avg of bounds
-                fit_default_vars[param] = ((value[1] + value[2]) / 2, value[1], value[2])
+                fit_default_vars[param] = ((lower + upper) / 2, lower, upper)
                 # if user's guess was outside bounds
-                if value[0] != self.default_vars[param][0]:
-                    print(f"---Initial guess for '{param}' is outside user-defined bounds---"
-                          f"\n---guess will default to average of bounds---")
+                if initial != self.default_vars[param][0]:
+                    raise ValueError(f"Initial guess for '{param}' is outside user-defined bounds")
 
         print(f"final fitting vars: {fit_default_vars}")
         initial_guesses, lower_bounds, upper_bounds = zip(*fit_default_vars.values())
@@ -164,7 +170,7 @@ class FitE_rev(HelperClass):
                     return self.fixed_vars[param]
                 return args[var_index[param]]
 
-            v_fit, i_fit = E_rev(
+            _, i_fit = E_rev(
                 start_potential=round(self.start_voltage / 1000, 3),
                 switch_potential=round(self.reverse_voltage / 1000, 3),
                 reduction_potential=fetch('reduction_potential'),
@@ -177,15 +183,16 @@ class FitE_rev(HelperClass):
                 temperature=self.temperature,
             ).simulate()
             return i_fit
-        print(f"data len: x {len(self.voltage_to_fit)} y[1:] {len(self.current_to_fit[1:])}")
+        print(f"data len: x {len(self.voltage_to_fit)} y {len(self.current_to_fit)}")
         popt, pcov = curve_fit(f=fit_function,
                                xdata=self.voltage_to_fit,
-                               ydata=self.current_to_fit[1:],
+                               ydata=np.insert(self.current_to_fit, 0, 0),#[1:],
                                p0=initial_guesses,
                                bounds=[lower_bounds, upper_bounds])
 
         current_fit = fit_function(self.voltage_to_fit, *popt)
         sigma = np.sqrt(np.diag(pcov))  # one standard deviation of the parameters
+
         for val, error, param in zip(popt, sigma, fitting_params):
             print(f"Final fit: '{param}': {val:.2E} +/- {error:.0E}")
         print(f"Ill-conditioned if large: {np.linalg.cond(pcov)}")
