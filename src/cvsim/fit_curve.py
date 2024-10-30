@@ -16,15 +16,16 @@ class FitMechanism(ABC):
 
     """
 
-    def __init__(self,
-                 voltage_to_fit: list | np.ndarray,
-                 current_to_fit: list | np.ndarray,
-                 scan_r: float,
-                 c_bulk: float,
-                 step_size: float,
-                 disk_radius: float,
-                 temperature: float,
-                 ) -> None:
+    def __init__(
+            self,
+            voltage_to_fit: list[float] | np.ndarray,
+            current_to_fit: list[float] | np.ndarray,
+            scan_r: float,
+            c_bulk: float,
+            step_size: float,
+            disk_radius: float,
+            temperature: float,
+    ) -> None:
         self.current_to_fit = current_to_fit
         self.scan_r = scan_r
         self.c_bulk = c_bulk
@@ -58,18 +59,19 @@ class FitE_rev(FitMechanism):
     TODO
     """
 
-    def __init__(self,
-                 voltage_to_fit: list | np.ndarray,
-                 current_to_fit: list | np.ndarray,
-                 scan_r: float,
-                 c_bulk: float,
-                 step_size: float = 1.0,
-                 disk_radius: float = 1.5,
-                 temperature: float = 298.0,
-                 reduction_potential: float | None = None,
-                 diffusion_reactant: float | None = None,
-                 diffusion_product: float | None = None
-                 ) -> None:
+    def __init__(
+            self,
+            voltage_to_fit: list[float] | np.ndarray,
+            current_to_fit: list[float] | np.ndarray,
+            scan_r: float,
+            c_bulk: float,
+            step_size: float = 1.0,
+            disk_radius: float = 1.5,
+            temperature: float = 298.0,
+            reduction_potential: float | None = None,
+            diffusion_reactant: float | None = None,
+            diffusion_product: float | None = None
+    ) -> None:
         super().__init__(voltage_to_fit, current_to_fit, scan_r, c_bulk, step_size, disk_radius, temperature)
         self.reduction_potential = reduction_potential
         self.diffusion_reactant = diffusion_reactant
@@ -88,19 +90,20 @@ class FitE_rev(FitMechanism):
         self.default_vars = {
             'reduction_potential': [round((self.voltage_to_fit[np.argmax(self.current_to_fit)]
                                            + self.voltage_to_fit[np.argmin(self.current_to_fit)]) / 2, 3),
-                                    round(min(self.start_voltage, self.reverse_voltage)/1000, 3),
-                                    round(max(self.start_voltage, self.reverse_voltage)/1000, 3),
+                                    round(min(self.start_voltage, self.reverse_voltage) / 1000, 3),
+                                    round(max(self.start_voltage, self.reverse_voltage) / 1000, 3),
                                     ],
             'diffusion_reactant': [1e-6, 5e-8, 1e-4],
             'diffusion_product': [1e-6, 5e-8, 1e-4],
         }
         # TODO incorrect inputs, error handling
 
-    def fit(self,
-            reduction_potential: None | float | tuple[float, float] | tuple[float, float, float] = None,
-            diffusion_reactant: None | float | tuple[float, float] | tuple[float, float, float] = None,
-            diffusion_product: None | float | tuple[float, float] | tuple[float, float, float] = None,
-            ) -> tuple[np.ndarray, np.ndarray]:
+    def fit(
+        self,
+        reduction_potential: None | float | tuple[float, float] | tuple[float, float, float] = None,
+        diffusion_reactant: None | float | tuple[float, float] | tuple[float, float, float] = None,
+        diffusion_product: None | float | tuple[float, float] | tuple[float, float, float] = None,
+    ) -> tuple[np.ndarray, np.ndarray]:
         """TODO  no guess | initial guess | bounds | guess, bounds"""
 
         fit_vars = {
@@ -161,8 +164,8 @@ class FitE_rev(FitMechanism):
         print(f'Fixed params: {list(self.fixed_vars)}')
         print(f'Fitting for: {list(fitting_params)}')
 
-        def fit_function(x: list | np.ndarray, *args) -> np.ndarray:  # curve_fit calls this
-            """TODO"""
+        def fit_function(x: list[float] | np.ndarray, *args) -> np.ndarray:
+            """Inner function used by scipy curve_fit to fit a CV"""
             print(f"trying values: {args}")
 
             def fetch(param: str) -> float:
@@ -196,4 +199,5 @@ class FitE_rev(FitMechanism):
         for val, error, param in zip(popt, sigma, fitting_params):
             print(f"Final fit: '{param}': {val:.2E} +/- {error:.0E}")
         print(f"Ill-conditioned if large: {np.linalg.cond(pcov)}")
+        # TODO: return the optimal parameters, transform popt from an array into a dict keyed by fitting param name?
         return self.voltage_to_fit, current_fit
