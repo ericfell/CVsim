@@ -1,7 +1,6 @@
 """
 Module for cyclic voltammogram fitting, using a semi-integration
 simulated CV for one- and two-electron processes.
-
 """
 
 from abc import ABC, abstractmethod
@@ -12,7 +11,26 @@ from .mechanisms import CyclicVoltammetryScheme, E_rev, E_q, E_qC, EE, SquareSch
 
 class FitMechanism(ABC):
     """
-    Scheme for fitting CVs
+    Scheme for fitting cyclic voltammograms.
+
+    Parameters
+    ----------
+    voltage_to_fit : list[float] | np.ndarray
+        Array of voltage data of the CV to fit.
+    current_to_fit : list[float] | np.ndarray
+        Array of current data of the CV to fit.
+    scan_r : float
+        Potential sweep rate (V/s).
+    c_bulk : float
+        Bulk concentration of redox species (mM or mol/m^3).
+    step_size : float
+        Voltage increment during CV scan (mV).
+    disk_radius : float
+        Radius of disk macro-electrode (mm).
+        Default is 1.5 mm, a typical working electrode.
+    temperature : float
+        Temperature (K).
+        Default is 298.0 K (24.85C).
 
     """
 
@@ -23,8 +41,8 @@ class FitMechanism(ABC):
             scan_r: float,
             c_bulk: float,
             step_size: float,
-            disk_radius: float,
-            temperature: float,
+            disk_radius: float = 1.5,
+            temperature: float = 298.0,
     ) -> None:
         self.current_to_fit = current_to_fit
         self.scan_r = scan_r
@@ -69,7 +87,36 @@ class FitMechanism(ABC):
 
 class FitE_rev(FitMechanism):
     """
-    TODO
+    Scheme for fitting a CV for a reversible (Nernstian) one electron transfer mechanism.
+
+    Parameters
+    ----------
+    voltage_to_fit : list[float] | np.ndarray
+        Array of voltage data of the CV to fit.
+    current_to_fit : list[float] | np.ndarray
+        Array of current data of the CV to fit.
+    scan_r : float
+        Potential sweep rate (V/s).
+    c_bulk : float
+        Bulk concentration of redox species (mM or mol/m^3).
+    step_size : float
+        Voltage increment during CV scan (mV).
+    disk_radius : float
+        Radius of disk macro-electrode (mm).
+        Default is 1.5 mm, a typical working electrode.
+    temperature : float
+        Temperature (K).
+        Default is 298.0 K (24.85C).
+    reduction_potential : float | None
+        Reduction potential of the one-electron transfer process (V vs. reference).
+        If known, can be fixed value, otherwise defaults to None.
+    diffusion_reactant : float | None
+        Diffusion coefficient of reactant (cm^2/s).
+        If known, can be fixed value, otherwise defaults to None.
+    diffusion_product : float | None
+        Diffusion coefficient of product (cm^2/s).
+        If known, can be fixed value, otherwise defaults to None.
+
     """
 
     def __init__(
@@ -79,8 +126,8 @@ class FitE_rev(FitMechanism):
             scan_r: float,
             c_bulk: float,
             step_size: float,
-            disk_radius: float,
-            temperature: float,
+            disk_radius: float = 1.5,
+            temperature: float = 298.0,
             reduction_potential: float | None = None,
             diffusion_reactant: float | None = None,
             diffusion_product: float | None = None
@@ -116,12 +163,37 @@ class FitE_rev(FitMechanism):
         # TODO incorrect inputs, error handling
 
     def fit(
-            self,
+            self,  # TODO make the guess typehints into a high level type alias? all classes would use it
             reduction_potential: None | float | tuple[float, float] | tuple[float, float, float] = None,
             diffusion_reactant: None | float | tuple[float, float] | tuple[float, float, float] = None,
             diffusion_product: None | float | tuple[float, float] | tuple[float, float, float] = None,
     ) -> tuple[np.ndarray, np.ndarray]:
-        """TODO  no guess | initial guess | bounds | guess, bounds"""
+        """
+        Fits the CV for a reversible (Nernstian) one electron transfer mechanism.
+        If a parameter is given, it must be a: float for initial guess of parameter; tuple[float, float] for
+        (lower bound, upper bound) of the initial guess; or tuple[float, float, float] for
+        (initial guess, lower bound, upper bound).
+
+        Parameters
+        ----------
+        reduction_potential : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the reduction potential (V vs. reference).
+            Defaults to None.
+        diffusion_reactant : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the diffusion coefficient of reactant (cm^2/s).
+            Defaults to None.
+        diffusion_product : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the diffusion coefficient of product (cm^2/s).
+            Defaults to None.
+
+        Returns
+        -------
+        voltage_to_fit : np.ndarray
+            Array of potential (V) values of the CV fit.
+        current_fit : np.ndarray
+            Array of current (A) values of the CV fit.
+
+        """
 
         fit_vars = {
             'reduction_potential': reduction_potential,
@@ -177,11 +249,52 @@ class FitE_rev(FitMechanism):
         print(f'Fixed params: {list(self.fixed_vars)}')
         print(f'Fitting for: {list(fitting_params)}')
 
-        def fit_function(x: list[float] | np.ndarray, *args) -> np.ndarray:
-            """Inner function used by scipy curve_fit to fit a CV"""
+        def fit_function(
+                x: list[float] | np.ndarray,  # pylint: disable=unused-argument
+                *args: float,
+        ) -> np.ndarray:
+            """
+            Inner function used by scipy's curve_fit to fit a CV according to the
+            one-electron reversible mechanism.
+
+            Parameters
+            ----------
+            x : list[float] | np.ndarray
+                Array of voltage data of the CV to fit.
+            *args : float
+                Value(s) for parameter(s) that curve_fit tries during fitting procedure.
+
+            Returns
+            -------
+            i_fit : np.ndarray
+                Array of current (A) values of the CV fit.
+
+            Notes
+            -----
+            Scipy's `curve_fit` does not allow for the user to pass in a function with various
+            dynamic parameters so `fit_function` and its inner function `fetch` are used to pass
+            CV simulations to `curve_fit` with optional inputs of initial guesses/bounds from `fit`.
+
+            """
+
             print(f"trying values: {args}")
 
             def fetch(param: str) -> float:
+                """
+                Helper function to retrieve value for fixed variable if it exists, or retrieve the
+                guess for the parameter that is passed in via curve_fit
+
+                Parameters
+                ----------
+                param : str
+                    Name of desired CV simulation's input parameter.
+
+                Returns
+                -------
+                float: If param exists in fixed_vars then its value is returned, otherwise
+                        return the value of the parameter in the args passed in via curve_fit.
+
+                """
                 if param in self.fixed_vars:
                     return self.fixed_vars[param]
                 return args[var_index[param]]
