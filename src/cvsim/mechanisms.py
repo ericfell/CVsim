@@ -76,7 +76,7 @@ class CyclicVoltammetryScheme(ABC):
 
         self.velocity_constant = (self.diffusion_reactant / self.delta_t) ** 0.5
         self.electrode_area = np.pi * (disk_radius / 1000) ** 2  # mm to m, then m^2
-        self.n_max = int(round((abs(switch_potential - start_potential) * 2) / self.step_size))
+        self.n_max = round((abs(switch_potential - start_potential) * 2) / self.step_size)
         self.scan_direction = -1 if self.start_potential < self.switch_potential else 1
 
         self.nernst_constant = -F / (R * temperature)
@@ -130,9 +130,9 @@ class CyclicVoltammetryScheme(ABC):
         if second_reduction_potential is not None:
             electron_transfers.append(second_reduction_potential)
 
-        thetas = [int(round((i - self.delta_theta) * 1000)) for i in [self.start_potential, self.switch_potential]]
+        thetas = [round((i - self.delta_theta) * 1000) for i in [self.start_potential, self.switch_potential]]
         forward_scan = np.arange(thetas[0], thetas[1], step=self.delta_theta * -1000)
-        reverse_scan = np.append(forward_scan[-2::-1], int(round(self.start_potential*1000)))
+        reverse_scan = np.append(forward_scan[-2::-1], round(self.start_potential * 1000))
         potential = np.concatenate([forward_scan, reverse_scan]) / 1000
 
         potential_diff = self.scan_direction * (self.switch_potential - self.start_potential)
