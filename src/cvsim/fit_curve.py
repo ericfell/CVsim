@@ -9,6 +9,11 @@ from scipy.optimize import curve_fit
 from .mechanisms import CyclicVoltammetryScheme, E_rev, E_q, E_qC, EE, SquareScheme
 
 
+# Max allowable position for initial voltage oscillations in CV scan. Oftentimes the
+# first few voltage points returned from potentiostat can oscillate without a defined scan direction.
+VOLTAGE_OSCILLATION_LIMIT = 10
+
+
 class FitMechanism(ABC):
     """
     Scheme for fitting cyclic voltammograms.
@@ -65,7 +70,7 @@ class FitMechanism(ABC):
             if value <= 0.0:
                 raise ValueError(f"'{key}' must be > 0.0")
 
-        if round(voltage_to_fit[10] * 1000) > self.start_voltage:  # scan starts towards more positive
+        if round(voltage_to_fit[VOLTAGE_OSCILLATION_LIMIT] * 1000) > self.start_voltage:  # scan starts towards more positive
             self.reverse_voltage = round(max(voltage_to_fit) * 1000)
         else:  # scan starts towards more negative
             self.reverse_voltage = round(min(voltage_to_fit) * 1000)
@@ -232,6 +237,9 @@ class FitE_rev(FitMechanism):
                 if value[1] >= value[2]:
                     raise ValueError("Lower bound must be lower than upper bound")
                 fit_default_vars[param] = list(value)
+            else:
+                if not None:
+                    raise ValueError("Allowed inputs: None | float | tuple[float, float] | tuple[float, float, float]")
 
         for param, (initial, lower, upper) in fit_default_vars.items():
             if not lower < initial < upper:
@@ -250,7 +258,7 @@ class FitE_rev(FitMechanism):
         print(f'Fitting for: {list(fitting_params)}')
 
         def fit_function(
-                x: list[float] | np.ndarray,  # pylint: disable=unused-argument
+                x: list[float] | np.ndarray,  # pylint: disable=unused-argument # TODO type alias?
                 *args: float,
         ) -> np.ndarray:
             """
