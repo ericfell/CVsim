@@ -63,6 +63,17 @@ class CyclicVoltammetryScheme(ABC):
             disk_radius: float = 1.5,
             temperature: float = 298.0,
     ) -> None:
+        self._ensure_positive('step_size', step_size)
+        self._ensure_positive('scan_rate', scan_rate)
+        self._ensure_positive('diffusion_reactant', diffusion_reactant)
+        self._ensure_positive('diffusion_product', diffusion_product)
+        self._ensure_positive('disk_radius', disk_radius)
+        self._ensure_positive('c_bulk', c_bulk)
+        self._ensure_positive('temperature', temperature)
+
+        if start_potential == switch_potential:
+            raise ValueError("'start_potential' and 'switch_potential' must be different")
+
         self.start_potential = start_potential
         self.switch_potential = switch_potential
         self.reduction_potential = reduction_potential
@@ -83,21 +94,6 @@ class CyclicVoltammetryScheme(ABC):
         self.cv_constant = -F * self.scan_direction * self.electrode_area * c_bulk * self.velocity_constant
         self.delta_theta = self.scan_direction * self.step_size
 
-        for key, value in {
-            'step_size': self.step_size,
-            'scan_rate': scan_rate,
-            'diffusion_reactant': self.diffusion_reactant,
-            'diffusion_product': self.diffusion_product,
-            'disk_radius': disk_radius,
-            'c_bulk': c_bulk,
-            'temperature': temperature,
-        }.items():
-            if value <= 0.0:
-                raise ValueError(f"'{key}' must be > 0.0")
-
-        if self.start_potential == self.switch_potential:
-            raise ValueError("'start_potential' and 'switch_potential' must be different")
-
         # Weighting factors for semi-integration method.
         # This is equation (5:5) from [1].
         weights = [1.0] * self.n_max
@@ -105,7 +101,22 @@ class CyclicVoltammetryScheme(ABC):
             weights[n] = (2 * n - 1) * (weights[n - 1] / (2 * n))
         self.semi_integration_weights = weights
 
-    def voltage_profile_setup(self, second_reduction_potential: float | None = None) -> tuple[np.ndarray, list]:
+    @staticmethod
+    def _ensure_positive(param: str, value: float):
+        if value <= 0.0:
+            raise ValueError(f"'{param}' must be > 0.0")
+
+    @staticmethod
+    def _ensure_nonnegative(param: str, value: float):
+        if value <= 0.0:
+            raise ValueError(f"'{param}' must be > 0.0")
+
+    @staticmethod
+    def _ensure_open_unit_interval(param: str, value: float):
+        if not 0.0 < value < 1.0:
+            raise ValueError(f"'{param}' must be between 0.0 and 1.0")
+
+    def _voltage_profile_setup(self, second_reduction_potential: float | None = None) -> tuple[np.ndarray, list]:
         """
         Compute the potential steps for voltage profile and for exponential Nernstian/Butler-Volmer function.
         This is equation (6:1) from [1].
@@ -149,7 +160,17 @@ class CyclicVoltammetryScheme(ABC):
 
     @abstractmethod
     def simulate(self) -> tuple[np.ndarray, np.ndarray]:
-        """Simulates current-potential profile for desired mechanism"""
+        """
+        Simulates current-potential profile for desired mechanism
+
+        Returns
+        -------
+        potential : np.ndarray
+            Potential values in full CV sweep.
+        current : np.ndarray
+            Current values in full CV sweep.
+
+        """
         raise NotImplementedError
 
 
@@ -226,7 +247,7 @@ class E_rev(CyclicVoltammetryScheme):
         """
 
         weights = self.semi_integration_weights
-        potential, [xi_function] = self.voltage_profile_setup()
+        potential, [xi_function] = self._voltage_profile_setup()
 
         current = np.zeros(self.n_max)
 
@@ -301,14 +322,11 @@ class E_q(CyclicVoltammetryScheme):
             disk_radius,
             temperature,
         )
+        self._ensure_open_unit_interval('alpha', alpha)
+        self._ensure_nonnegative('k_0', k_0)
+
         self.alpha = alpha
         self.k_0 = k_0 / 100  # cm/s to m/s
-
-        if not 0.0 < self.alpha < 1.0:
-            raise ValueError("'alpha' must be between 0.0 and 1.0")
-
-        if self.k_0 <= 0.0:
-            raise ValueError("'k_0' must be > 0.0")
 
     def simulate(self) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -324,7 +342,7 @@ class E_q(CyclicVoltammetryScheme):
         """
 
         weights = self.semi_integration_weights
-        potential, [xi_function] = self.voltage_profile_setup()
+        potential, [xi_function] = self._voltage_profile_setup()
 
         current = np.zeros(self.n_max)
 
@@ -410,20 +428,15 @@ class E_qC(CyclicVoltammetryScheme):
             disk_radius,
             temperature,
         )
+        self._ensure_open_unit_interval('alpha', alpha)
+        self._ensure_nonnegative('k_0', k_0)
+        self._ensure_nonnegative('k_backward', k_backward)
+        self._ensure_positive('k_forward', k_forward)
+
         self.alpha = alpha
         self.k_0 = k_0 / 100  # cm/s to m/s
         self.k_forward = k_forward
         self.k_backward = k_backward
-
-        if not 0.0 < self.alpha < 1.0:
-            raise ValueError("'alpha' must be between 0.0 and 1.0")
-
-        for key, value in {'k_0': self.k_0, 'k_backward': self.k_backward}.items():
-            if value <= 0.0:
-                raise ValueError(f"'{key}' must be > 0.0")
-
-        if self.k_forward < 0.0:
-            raise ValueError("'k_forward' must be >= 0.0")
 
     def simulate(self) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -442,7 +455,7 @@ class E_qC(CyclicVoltammetryScheme):
         k_sum = self.k_forward + self.k_backward
         k_const = self.k_forward / self.k_backward
         weights = self.semi_integration_weights
-        potential, [xi_function] = self.voltage_profile_setup()
+        potential, [xi_function] = self._voltage_profile_setup()
 
         current = np.zeros(self.n_max)
         exp_factors = np.zeros(self.n_max)
@@ -549,23 +562,18 @@ class EE(CyclicVoltammetryScheme):
             disk_radius,
             temperature,
         )
+        self._ensure_open_unit_interval('alpha', alpha)
+        self._ensure_open_unit_interval('alpha_second_e', alpha_second_e)
+        self._ensure_positive('diffusion_intermediate', diffusion_intermediate)
+        self._ensure_positive('k_0', k_0)
+        self._ensure_positive('k_0_second_e', k_0_second_e)
+
         self.second_reduction_potential = second_reduction_potential
         self.diffusion_intermediate = diffusion_intermediate / 1e4  # cm^2/s to m^2/s
         self.alpha = alpha
         self.alpha_second_e = alpha_second_e
         self.k_0 = k_0 / 100  # cm/s to m/s
         self.k_0_second_e = k_0_second_e / 100  # cm/s to m/s
-
-        if not 0.0 < self.alpha < 1.0 or not 0.0 < self.alpha_second_e < 1.0:
-            raise ValueError("alpha parameters must be between 0.0 and 1.0")
-
-        for key, value in {
-            'diffusion_intermediate': self.diffusion_intermediate,
-            'k_0': self.k_0,
-            'k_0_second_e': self.k_0_second_e,
-        }.items():
-            if value <= 0.0:
-                raise ValueError(f"'{key}' must be > 0.0")
 
     def simulate(self) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -581,7 +589,7 @@ class EE(CyclicVoltammetryScheme):
         """
 
         weights = self.semi_integration_weights
-        potential, (xi_function1, xi_function2) = self.voltage_profile_setup(self.second_reduction_potential)
+        potential, (xi_function1, xi_function2) = self._voltage_profile_setup(self.second_reduction_potential)
 
         intermediate_const = (self.diffusion_intermediate / self.delta_t) ** 0.5
 
@@ -707,6 +715,15 @@ class SquareScheme(CyclicVoltammetryScheme):
             disk_radius,
             temperature,
         )
+        self._ensure_open_unit_interval('alpha', alpha)
+        self._ensure_open_unit_interval('alpha_second_e', alpha_second_e)
+        self._ensure_positive('k_0', k_0)
+        self._ensure_positive('k_0_second_e', k_0_second_e)
+        self._ensure_positive('k_backward_first', k_backward_first)
+        self._ensure_positive('k_backward_second', k_backward_second)
+        self._ensure_nonnegative('k_forward_first', k_forward_first)
+        self._ensure_nonnegative('k_forward_second', k_forward_second)
+
         self.second_reduction_potential = second_reduction_potential
         self.alpha = alpha
         self.alpha_second_e = alpha_second_e
@@ -716,23 +733,6 @@ class SquareScheme(CyclicVoltammetryScheme):
         self.k_backward_first = k_backward_first
         self.k_forward_second = k_forward_second
         self.k_backward_second = k_backward_second
-
-        if not 0.0 < self.alpha < 1.0 or not 0.0 < self.alpha_second_e < 1.0:
-            raise ValueError("alpha parameters must be between 0.0 and 1.0")
-
-        for key, value in {
-            'k_0': self.k_0,
-            'k_0_second_e': self.k_0_second_e,
-            'k_forward_first': self.k_forward_first,
-            'k_backward_first': self.k_backward_first,
-            'k_forward_second': self.k_forward_second,
-            'k_backward_second': self.k_backward_second,
-        }.items():
-            if key not in ['k_forward_first', 'k_forward_second'] and value <= 0.0:
-                raise ValueError(f"'{key}' must be > 0.0")
-
-            if value < 0.0:
-                raise ValueError(f"'{key}' must be >= 0.0")
 
     def simulate(self) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -748,7 +748,7 @@ class SquareScheme(CyclicVoltammetryScheme):
         """
 
         weights = self.semi_integration_weights
-        potential, (xi_function1, xi_function2) = self.voltage_profile_setup(self.second_reduction_potential)
+        potential, (xi_function1, xi_function2) = self._voltage_profile_setup(self.second_reduction_potential)
 
         k_sum1 = self.k_forward_first + self.k_backward_first
         big_k1 = self.k_forward_first / self.k_backward_first
