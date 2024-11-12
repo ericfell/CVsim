@@ -66,22 +66,25 @@ class FitMechanism(ABC):
         self.step_size = step_size
         self.disk_radius = disk_radius
         self.temperature = temperature
-        self.start_voltage = round(voltage_to_fit[0] * 1000)
+        self.start_voltage = voltage_to_fit[0]
+        self.start_voltage_mv = round(self.start_voltage * 1000)
 
-        if round(voltage_to_fit[VOLTAGE_OSCILLATION_LIMIT] * 1000) > self.start_voltage:
+        if round(voltage_to_fit[VOLTAGE_OSCILLATION_LIMIT]) > self.start_voltage:
             # scan starts towards more positive
-            self.reverse_voltage = round(max(voltage_to_fit) * 1000)
+            self.reverse_voltage = max(voltage_to_fit)
+            self.reverse_voltage_mv = round(self.reverse_voltage * 1000)
         else:
             # scan starts towards more negative
-            self.reverse_voltage = round(min(voltage_to_fit) * 1000)
+            self.reverse_voltage = min(voltage_to_fit)
+            self.reverse_voltage_mv = round(self.reverse_voltage * 1000)
 
         # make a cleaner x array
         scan_direction = -1 if self.start_voltage < self.reverse_voltage else 1
         delta_theta = scan_direction * self.step_size
 
-        thetas = [round((i - delta_theta)) for i in [self.start_voltage, self.reverse_voltage]]
+        thetas = [round((i - delta_theta)) for i in [self.start_voltage_mv, self.reverse_voltage_mv]]
         forward_scan = np.arange(thetas[0], thetas[1], step=delta_theta * -1)
-        reverse_scan = np.append(forward_scan[-2::-1], self.start_voltage)
+        reverse_scan = np.append(forward_scan[-2::-1], self.start_voltage_mv)
         self.voltage_to_fit = np.concatenate([forward_scan, reverse_scan]) / 1000
 
     @staticmethod
@@ -170,13 +173,12 @@ class FitE_rev(FitMechanism):
             'reduction_potential': [
                 round((self.voltage_to_fit[np.argmax(self.current_to_fit)]
                        + self.voltage_to_fit[np.argmin(self.current_to_fit)]) / 2, 3),
-                round(min(self.start_voltage, self.reverse_voltage) / 1000, 3),
-                round(max(self.start_voltage, self.reverse_voltage) / 1000, 3),
+                round(min(self.start_voltage_mv, self.reverse_voltage_mv) / 1000, 3),
+                round(max(self.start_voltage_mv, self.reverse_voltage_mv) / 1000, 3),
             ],
             'diffusion_reactant': [1e-6, 5e-8, 1e-4],
             'diffusion_product': [1e-6, 5e-8, 1e-4],
         }
-        # TODO incorrect inputs, error handling
 
     def fit(
             self,
@@ -318,8 +320,8 @@ class FitE_rev(FitMechanism):
                 return args[var_index[param]]
 
             _, i_fit = E_rev(
-                start_potential=round(self.start_voltage / 1000, 3),
-                switch_potential=round(self.reverse_voltage / 1000, 3),
+                start_potential=round(self.start_voltage_mv / 1000, 3),
+                switch_potential=round(self.reverse_voltage_mv / 1000, 3),
                 reduction_potential=fetch('reduction_potential'),
                 scan_rate=self.scan_rate,
                 c_bulk=self.c_bulk,
@@ -350,6 +352,6 @@ class FitE_rev(FitMechanism):
 
         # Semi-analytical method does not compute the first point (i.e. time=0)
         # so the starting voltage data point with a zero current is reinserted
-        self.voltage_to_fit = np.insert(self.voltage_to_fit, 0, self.start_voltage / 1000)
+        self.voltage_to_fit = np.insert(self.voltage_to_fit, 0, self.start_voltage_mv / 1000)
         current_fit = np.insert(current_fit, 0, 0)
         return self.voltage_to_fit, current_fit
