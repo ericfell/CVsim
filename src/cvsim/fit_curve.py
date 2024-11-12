@@ -49,6 +49,15 @@ class FitMechanism(ABC):
             disk_radius: float = 1.5,
             temperature: float = 298.0,
     ) -> None:
+        if len(voltage_to_fit) != len(current_to_fit):
+            raise ValueError("'voltage_to_fit' and 'current_to_fit' must be equal length")
+
+        self._ensure_positive('step_size', step_size)
+        self._ensure_positive('scan_rate', scan_r)
+        self._ensure_positive('disk_radius', disk_radius)
+        self._ensure_positive('c_bulk', c_bulk)
+        self._ensure_positive('temperature', temperature)
+
         self.current_to_fit = current_to_fit
         self.scan_r = scan_r
         self.c_bulk = c_bulk
@@ -57,22 +66,11 @@ class FitMechanism(ABC):
         self.temperature = temperature
         self.start_voltage = round(voltage_to_fit[0] * 1000)
 
-        if len(voltage_to_fit) != len(self.current_to_fit):
-            raise ValueError("'voltage_to_fit' and 'current_to_fit' must be equal length")
-
-        for key, value in {
-            'step_size': self.step_size,
-            'scan_rate': self.scan_r,
-            'disk_radius': self.disk_radius,
-            'c_bulk': self.c_bulk,
-            'temperature': self.temperature,
-        }.items():
-            if value <= 0.0:
-                raise ValueError(f"'{key}' must be > 0.0")
-
-        if round(voltage_to_fit[VOLTAGE_OSCILLATION_LIMIT] * 1000) > self.start_voltage:  # scan starts towards more positive
+        if round(voltage_to_fit[VOLTAGE_OSCILLATION_LIMIT] * 1000) > self.start_voltage:
+            # scan starts towards more positive
             self.reverse_voltage = round(max(voltage_to_fit) * 1000)
-        else:  # scan starts towards more negative
+        else:
+            # scan starts towards more negative
             self.reverse_voltage = round(min(voltage_to_fit) * 1000)
 
         # make a cleaner x array
@@ -83,6 +81,20 @@ class FitMechanism(ABC):
         forward_scan = np.arange(thetas[0], thetas[1], step=delta_theta * -1)
         reverse_scan = np.append(forward_scan[-2::-1], self.start_voltage)
         self.voltage_to_fit = np.concatenate([forward_scan, reverse_scan]) / 1000
+
+    @staticmethod
+    def _ensure_positive(param: str, value: float):
+        if value <= 0.0:
+            raise ValueError(f"'{param}' must be > 0.0")
+
+    @staticmethod
+    def _ensure_positive_or_none(param: str, value: float | None):
+        if value is not None and value <= 0.0:
+            raise ValueError(f"'{param}' must be > 0.0 or None")
+
+    @staticmethod
+    def _non_none_dict(mapping: dict):
+        return {k: v for k, v in mapping.items() if v is not None}
 
     @abstractmethod
     def fit(self, *args):
@@ -138,21 +150,19 @@ class FitE_rev(FitMechanism):
             diffusion_product: float | None = None
     ) -> None:
         super().__init__(voltage_to_fit, current_to_fit, scan_r, c_bulk, step_size, disk_radius, temperature)
+        self._ensure_positive_or_none('diffusion_reactant', diffusion_reactant)
+        self._ensure_positive_or_none('diffusion_product', diffusion_product)
+
         self.reduction_potential = reduction_potential  # TODO move into abstract class?
         self.diffusion_reactant = diffusion_reactant  # TODO move into abstract class?
         self.diffusion_product = diffusion_product
 
         # Contains only variables with a user-specified fixed value
-        self.fixed_vars = {
+        self.fixed_vars = self._non_none_dict({
             'reduction_potential': reduction_potential,
             'diffusion_reactant': diffusion_reactant,
             'diffusion_product': diffusion_product,
-        }
-        for key, value in self.fixed_vars.items():
-            if key in ['diffusion_reactant', 'diffusion_product'] and value is not None and value <= 0.0:
-                raise ValueError(f"'{key}' must be > 0.0 or None")
-
-        self.fixed_vars = {k: v for k, v in self.fixed_vars.items() if v is not None}
+        })
 
         # Values are [initial guess, lower bound, upper bound]
         self.default_vars = {
@@ -200,12 +210,11 @@ class FitE_rev(FitMechanism):
 
         """
 
-        fit_vars = {
+        fit_vars = self._non_none_dict({
             'reduction_potential': reduction_potential,
             'diffusion_reactant': diffusion_reactant,
             'diffusion_product': diffusion_product,
-        }
-        fit_vars = {k: v for k, v in fit_vars.items() if v is not None}
+        })
 
         # check intersection of fixed_vars / fit_vars dicts. if so raise error
         intersection_errors = self.fixed_vars.keys() & fit_vars.keys()
