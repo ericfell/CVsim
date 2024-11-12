@@ -4,10 +4,13 @@ simulated CV for one- and two-electron processes.
 """
 
 from abc import ABC, abstractmethod
+from typing import TypeAlias
 import numpy as np
 from scipy.optimize import curve_fit
 from .mechanisms import CyclicVoltammetryScheme, E_rev, E_q, E_qC, EE, SquareScheme
 
+
+_ParamGuess: TypeAlias = None | float | tuple[float, float] | tuple[float, float, float]
 
 # Max allowable position for initial voltage oscillations in CV scan. Oftentimes the
 # first few voltage points returned from potentiostat can oscillate without a defined scan direction.
@@ -176,10 +179,10 @@ class FitE_rev(FitMechanism):
         # TODO incorrect inputs, error handling
 
     def fit(
-            self,  # TODO make the guess typehints into a high level type alias? all classes would use it
-            reduction_potential: None | float | tuple[float, float] | tuple[float, float, float] = None,
-            diffusion_reactant: None | float | tuple[float, float] | tuple[float, float, float] = None,
-            diffusion_product: None | float | tuple[float, float] | tuple[float, float, float] = None,
+            self,
+            reduction_potential: _ParamGuess = None,
+            diffusion_reactant: _ParamGuess = None,
+            diffusion_product: _ParamGuess = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Fits the CV for a reversible (Nernstian) one electron transfer mechanism.
@@ -265,7 +268,7 @@ class FitE_rev(FitMechanism):
         print(f'Fitting for: {list(fitting_params)}')
 
         def fit_function(
-                x: list[float] | np.ndarray,  # pylint: disable=unused-argument # TODO type alias?
+                x: list[float] | np.ndarray,  # pylint: disable=unused-argument
                 *args: float,
         ) -> np.ndarray:
             """
