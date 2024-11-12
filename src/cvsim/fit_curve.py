@@ -24,7 +24,7 @@ class FitMechanism(ABC):
         Array of voltage data of the CV to fit.
     current_to_fit : list[float] | np.ndarray
         Array of current data of the CV to fit.
-    scan_r : float
+    scan_rate : float
         Potential sweep rate (V/s).
     c_bulk : float
         Bulk concentration of redox species (mM or mol/m^3).
@@ -32,7 +32,6 @@ class FitMechanism(ABC):
         Voltage increment during CV scan (mV).
     disk_radius : float
         Radius of disk macro-electrode (mm).
-        Default is 1.5 mm, a typical working electrode.
     temperature : float
         Temperature (K).
         Default is 298.0 K (24.85C).
@@ -43,23 +42,23 @@ class FitMechanism(ABC):
             self,
             voltage_to_fit: list[float] | np.ndarray,
             current_to_fit: list[float] | np.ndarray,
-            scan_r: float,
+            scan_rate: float,
             c_bulk: float,
             step_size: float,
-            disk_radius: float = 1.5,
+            disk_radius: float,
             temperature: float = 298.0,
     ) -> None:
         if len(voltage_to_fit) != len(current_to_fit):
             raise ValueError("'voltage_to_fit' and 'current_to_fit' must be equal length")
 
         self._ensure_positive('step_size', step_size)
-        self._ensure_positive('scan_rate', scan_r)
+        self._ensure_positive('scan_rate', scan_rate)
         self._ensure_positive('disk_radius', disk_radius)
         self._ensure_positive('c_bulk', c_bulk)
         self._ensure_positive('temperature', temperature)
 
         self.current_to_fit = current_to_fit
-        self.scan_r = scan_r
+        self.scan_rate = scan_rate
         self.c_bulk = c_bulk
         self.step_size = step_size
         self.disk_radius = disk_radius
@@ -112,7 +111,7 @@ class FitE_rev(FitMechanism):
         Array of voltage data of the CV to fit.
     current_to_fit : list[float] | np.ndarray
         Array of current data of the CV to fit.
-    scan_r : float
+    scan_rate : float
         Potential sweep rate (V/s).
     c_bulk : float
         Bulk concentration of redox species (mM or mol/m^3).
@@ -120,7 +119,6 @@ class FitE_rev(FitMechanism):
         Voltage increment during CV scan (mV).
     disk_radius : float
         Radius of disk macro-electrode (mm).
-        Default is 1.5 mm, a typical working electrode.
     temperature : float
         Temperature (K).
         Default is 298.0 K (24.85C).
@@ -140,16 +138,16 @@ class FitE_rev(FitMechanism):
             self,
             voltage_to_fit: list[float] | np.ndarray,
             current_to_fit: list[float] | np.ndarray,
-            scan_r: float,
+            scan_rate: float,
             c_bulk: float,
             step_size: float,
-            disk_radius: float = 1.5,
+            disk_radius: float,
             temperature: float = 298.0,
             reduction_potential: float | None = None,
             diffusion_reactant: float | None = None,
             diffusion_product: float | None = None
     ) -> None:
-        super().__init__(voltage_to_fit, current_to_fit, scan_r, c_bulk, step_size, disk_radius, temperature)
+        super().__init__(voltage_to_fit, current_to_fit, scan_rate, c_bulk, step_size, disk_radius, temperature)
         self._ensure_positive_or_none('diffusion_reactant', diffusion_reactant)
         self._ensure_positive_or_none('diffusion_product', diffusion_product)
 
@@ -320,7 +318,7 @@ class FitE_rev(FitMechanism):
                 start_potential=round(self.start_voltage / 1000, 3),
                 switch_potential=round(self.reverse_voltage / 1000, 3),
                 reduction_potential=fetch('reduction_potential'),
-                scan_rate=self.scan_r,
+                scan_rate=self.scan_rate,
                 c_bulk=self.c_bulk,
                 diffusion_reactant=fetch('diffusion_reactant'),
                 diffusion_product=fetch('diffusion_product'),

@@ -22,7 +22,7 @@ class TestFitE_rev:
     @pytest.mark.parametrize(
         "voltage_to_fit, "
         "current_to_fit, "
-        "scan_r, "
+        "scan_rate, "
         "c_bulk, "
         "step_size, "
         "disk_radius, "
@@ -45,7 +45,7 @@ class TestFitE_rev:
             self,
             voltage_to_fit,
             current_to_fit,
-            scan_r,
+            scan_rate,
             c_bulk,
             step_size,
             disk_radius,
@@ -58,7 +58,7 @@ class TestFitE_rev:
             FitE_rev(
                 voltage_to_fit=voltage_to_fit,
                 current_to_fit=current_to_fit,
-                scan_r=scan_r,
+                scan_rate=scan_rate,
                 c_bulk=c_bulk,
                 step_size=step_size,
                 disk_radius=disk_radius,
@@ -89,7 +89,7 @@ class TestFitE_rev:
             v, i = FitE_rev(
                 voltage_to_fit=dummy_voltages,
                 current_to_fit=dummy_currents,
-                scan_r=0.1,
+                scan_rate=0.1,
                 c_bulk=1,
                 step_size=1,
                 disk_radius=1.5,
