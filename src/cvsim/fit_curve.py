@@ -116,7 +116,7 @@ class FitMechanism(ABC):
             raise ValueError(f"'{param}' must be > 0.0 or None")
 
     @staticmethod
-    def _ensure_open_unit_interval_or_none(param: str, value: float):
+    def _ensure_open_unit_interval_or_none(param: str, value: float | None):
         if value is not None and not 0.0 < value < 1.0:
             raise ValueError(f"'{param}' must be between 0.0 and 1.0, or None")
 
