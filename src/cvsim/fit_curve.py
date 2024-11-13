@@ -38,6 +38,15 @@ class FitMechanism(ABC):
     temperature : float
         Temperature (K).
         Default is 298.0 K (24.85C).
+    reduction_potential : float | None
+        Reduction potential of the one-electron transfer process (V vs. reference).
+        If known, can be fixed value, otherwise defaults to None.
+    diffusion_reactant : float | None
+        Diffusion coefficient of reactant (cm^2/s).
+        If known, can be fixed value, otherwise defaults to None.
+    diffusion_product : float | None
+        Diffusion coefficient of product (cm^2/s).
+        If known, can be fixed value, otherwise defaults to None.
 
     """
 
@@ -50,6 +59,9 @@ class FitMechanism(ABC):
             step_size: float,
             disk_radius: float,
             temperature: float = 298.0,
+            reduction_potential: float | None = None,
+            diffusion_reactant: float | None = None,
+            diffusion_product: float | None = None,
     ) -> None:
         if len(voltage_to_fit) != len(current_to_fit):
             raise ValueError("'voltage_to_fit' and 'current_to_fit' must be equal length")
@@ -59,6 +71,8 @@ class FitMechanism(ABC):
         self._ensure_positive('disk_radius', disk_radius)
         self._ensure_positive('c_bulk', c_bulk)
         self._ensure_positive('temperature', temperature)
+        self._ensure_positive_or_none('diffusion_reactant', diffusion_reactant)
+        self._ensure_positive_or_none('diffusion_product', diffusion_product)
 
         self.current_to_fit = current_to_fit
         self.scan_rate = scan_rate
@@ -66,6 +80,10 @@ class FitMechanism(ABC):
         self.step_size = step_size
         self.disk_radius = disk_radius
         self.temperature = temperature
+        self.reduction_potential = reduction_potential
+        self.diffusion_reactant = diffusion_reactant
+        self.diffusion_product = diffusion_product
+
         self.start_voltage = voltage_to_fit[0]
         self.start_voltage_mv = round(self.start_voltage * 1000)
 
@@ -98,8 +116,35 @@ class FitMechanism(ABC):
             raise ValueError(f"'{param}' must be > 0.0 or None")
 
     @staticmethod
+    def _ensure_open_unit_interval_or_none(param: str, value: float):
+        if value is not None and not 0.0 < value < 1.0:
+            raise ValueError(f"'{param}' must be between 0.0 and 1.0, or None")
+
+    @staticmethod
     def _non_none_dict(mapping: dict):
         return {k: v for k, v in mapping.items() if v is not None}
+
+    @staticmethod
+    def _fit_var_checker(fit_vars: dict, fit_default_vars: dict) -> dict:  # TODO rename
+        # take fit_vars dict, for each in it, replace the initial guess/bounds if specified
+        for param, value in fit_vars.items():
+            if isinstance(value, float | int):
+                # Initial guess
+                fit_default_vars[param][0] = value
+            elif isinstance(value, tuple) and len(value) == 2:
+                # Lower and upper bound
+                if value[0] >= value[1]:
+                    raise ValueError("Lower bound must be lower than upper bound")
+                fit_default_vars[param][1] = value[0]
+                fit_default_vars[param][2] = value[1]
+            elif isinstance(value, tuple) and len(value) == 3:
+                if value[1] >= value[2]:
+                    raise ValueError("Lower bound must be lower than upper bound")
+                fit_default_vars[param] = list(value)
+            else:
+                if not None:
+                    raise ValueError("Allowed inputs: None | float | tuple[float, float] | tuple[float, float, float]")
+        return fit_default_vars
 
     @abstractmethod
     def fit(self, *args):
@@ -151,18 +196,23 @@ class FitE_rev(FitMechanism):
             temperature: float = 298.0,
             reduction_potential: float | None = None,
             diffusion_reactant: float | None = None,
-            diffusion_product: float | None = None
+            diffusion_product: float | None = None,
     ) -> None:
-        super().__init__(voltage_to_fit, current_to_fit, scan_rate, c_bulk, step_size, disk_radius, temperature)
-        self._ensure_positive_or_none('diffusion_reactant', diffusion_reactant)  # TODO move into abstract class?
-        self._ensure_positive_or_none('diffusion_product', diffusion_product)  # TODO move into abstract class?
-
-        self.reduction_potential = reduction_potential  # TODO move into abstract class?
-        self.diffusion_reactant = diffusion_reactant  # TODO move into abstract class?
-        self.diffusion_product = diffusion_product  # TODO move into abstract class?
+        super().__init__(
+            voltage_to_fit,
+            current_to_fit,
+            scan_rate,
+            c_bulk,
+            step_size,
+            disk_radius,
+            temperature,
+            reduction_potential,
+            diffusion_reactant,
+            diffusion_product,
+        )
 
         # Contains only variables with a user-specified fixed value
-        self.fixed_vars = self._non_none_dict({
+        self.fixed_vars = self._non_none_dict({  # TODO adapt to read locals? move to abstract class?
             'reduction_potential': reduction_potential,
             'diffusion_reactant': diffusion_reactant,
             'diffusion_product': diffusion_product,
@@ -234,24 +284,7 @@ class FitE_rev(FitMechanism):
         fit_default_vars = {k: v for k, v in self.default_vars.items() if k in fitting_params}
         var_index = {var: index for index, var in enumerate(fit_default_vars.keys())}
 
-        # take fit_vars dict, for each in it, replace the initial guess/bounds if specified
-        for param, value in fit_vars.items():
-            if isinstance(value, float | int):
-                # Initial guess
-                fit_default_vars[param][0] = value
-            elif isinstance(value, tuple) and len(value) == 2:
-                # Lower and upper bound
-                if value[0] >= value[1]:
-                    raise ValueError("Lower bound must be lower than upper bound")
-                fit_default_vars[param][1] = value[0]
-                fit_default_vars[param][2] = value[1]
-            elif isinstance(value, tuple) and len(value) == 3:
-                if value[1] >= value[2]:
-                    raise ValueError("Lower bound must be lower than upper bound")
-                fit_default_vars[param] = list(value)
-            else:
-                if not None:
-                    raise ValueError("Allowed inputs: None | float | tuple[float, float] | tuple[float, float, float]")
+        fit_default_vars = self._fit_var_checker(fit_vars, fit_default_vars)
 
         for param, (initial, lower, upper) in fit_default_vars.items():
             if not lower < initial < upper:
@@ -411,13 +444,21 @@ class FitE_q(FitMechanism):
             alpha: float | None = None,
             k_0: float | None = None,
     ) -> None:
-        super().__init__(voltage_to_fit, current_to_fit, scan_rate, c_bulk, step_size, disk_radius, temperature)
-        self._ensure_positive_or_none('diffusion_reactant', diffusion_reactant)  # TODO move into abstract class?
-        self._ensure_positive_or_none('diffusion_product', diffusion_product)  # TODO move into abstract class?
+        super().__init__(
+            voltage_to_fit,
+            current_to_fit,
+            scan_rate,
+            c_bulk,
+            step_size,
+            disk_radius,
+            temperature,
+            reduction_potential,
+            diffusion_reactant,
+            diffusion_product,
+        )
 
-        self.reduction_potential = reduction_potential  # TODO move into abstract class?
-        self.diffusion_reactant = diffusion_reactant  # TODO move into abstract class?
-        self.diffusion_product = diffusion_product  # TODO move into abstract class?
+        self._ensure_open_unit_interval_or_none('alpha', alpha)
+        self._ensure_positive_or_none('k_0', k_0)
 
         self.alpha = alpha
         self.k_0 = k_0
@@ -442,7 +483,7 @@ class FitE_q(FitMechanism):
             'diffusion_reactant': [1e-6, 5e-8, 1e-4],
             'diffusion_product': [1e-6, 5e-8, 1e-4],
             'alpha': [0.5, 0.01, 0.99],
-            'k_0': [1e-3, 1e-8, 1],
+            'k_0': [1e-5, 1e-8, 1e-3],
         }
 
     def fit(
@@ -509,24 +550,7 @@ class FitE_q(FitMechanism):
         fit_default_vars = {k: v for k, v in self.default_vars.items() if k in fitting_params}
         var_index = {var: index for index, var in enumerate(fit_default_vars.keys())}
 
-        # take fit_vars dict, for each in it, replace the initial guess/bounds if specified
-        for param, value in fit_vars.items():
-            if isinstance(value, float | int):
-                # Initial guess
-                fit_default_vars[param][0] = value
-            elif isinstance(value, tuple) and len(value) == 2:
-                # Lower and upper bound
-                if value[0] >= value[1]:
-                    raise ValueError("Lower bound must be lower than upper bound")
-                fit_default_vars[param][1] = value[0]
-                fit_default_vars[param][2] = value[1]
-            elif isinstance(value, tuple) and len(value) == 3:
-                if value[1] >= value[2]:
-                    raise ValueError("Lower bound must be lower than upper bound")
-                fit_default_vars[param] = list(value)
-            else:
-                if not None:
-                    raise ValueError("Allowed inputs: None | float | tuple[float, float] | tuple[float, float, float]")
+        fit_default_vars = self._fit_var_checker(fit_vars, fit_default_vars)
 
         for param, (initial, lower, upper) in fit_default_vars.items():
             if not lower < initial < upper:
@@ -611,13 +635,15 @@ class FitE_q(FitMechanism):
             return i_fit
 
         # fit raw data but exclude first data point, as semi-analytical method skips time=0
+        # TODO need normalization of the current?
         fit_results = curve_fit(
             f=fit_function,
             xdata=self.voltage_to_fit,
             ydata=self.current_to_fit[1:],
+            #ydata=(self.current_to_fit[1:] / max(abs(self.current_to_fit[1:]))), # normalized
             p0=initial_guesses,
             bounds=[lower_bounds, upper_bounds],
-            #x_scale=[1,1,1e5],
+            #x_scale=[1,1e5],
         )
         # TODO: return the optimal parameters, transform popt from an array into a dict keyed by fitting param name?
         popt, pcov = list(fit_results)
