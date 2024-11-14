@@ -105,6 +105,27 @@ class FitMechanism(ABC):
         reverse_scan = np.append(forward_scan[-2::-1], self.start_voltage_mv)
         self.voltage_to_fit = np.concatenate([forward_scan, reverse_scan]) / 1000
 
+        # Contains only variables with a user-specified fixed value.
+        # These params are shared by all CVsim mechanisms
+        self.fixed_vars = self._non_none_dict({
+            'reduction_potential': reduction_potential,
+            'diffusion_reactant': diffusion_reactant,
+            'diffusion_product': diffusion_product,
+        })
+
+        # Values are [initial guess, lower bound, upper bound]
+        # These params are shared by all CVsim mechanisms
+        self.default_vars = {
+            'reduction_potential': [
+                round((self.voltage_to_fit[np.argmax(self.current_to_fit)]
+                       + self.voltage_to_fit[np.argmin(self.current_to_fit)]) / 2, 3),
+                round(min(self.start_voltage, self.reverse_voltage), 3),
+                round(max(self.start_voltage, self.reverse_voltage), 3),
+            ],
+            'diffusion_reactant': [1e-6, 5e-8, 1e-4],
+            'diffusion_product': [1e-6, 5e-8, 1e-4],
+        }
+
     @staticmethod
     def _ensure_positive(param: str, value: float):
         if value <= 0.0:
@@ -134,16 +155,17 @@ class FitMechanism(ABC):
             elif isinstance(value, tuple) and len(value) == 2:
                 # Lower and upper bound
                 if value[0] >= value[1]:
-                    raise ValueError("Lower bound must be lower than upper bound")
+                    raise ValueError(f"'{param}' lower bound must be lower than upper bound")
                 fit_default_vars[param][1] = value[0]
                 fit_default_vars[param][2] = value[1]
             elif isinstance(value, tuple) and len(value) == 3:
                 if value[1] >= value[2]:
-                    raise ValueError("Lower bound must be lower than upper bound")
+                    raise ValueError(f"'{param}' lower bound must be lower than upper bound")
                 fit_default_vars[param] = list(value)
             else:
                 if not None:
-                    raise ValueError("Allowed inputs: None | float | tuple[float, float] | tuple[float, float, float]")
+                    raise ValueError(f"'{param}' allowed inputs: "
+                                     f"None | float | tuple[float, float] | tuple[float, float, float]")
         return fit_default_vars
 
     @abstractmethod
@@ -210,25 +232,6 @@ class FitE_rev(FitMechanism):
             diffusion_reactant,
             diffusion_product,
         )
-
-        # Contains only variables with a user-specified fixed value
-        self.fixed_vars = self._non_none_dict({  # TODO adapt to read locals? move to abstract class?
-            'reduction_potential': reduction_potential,
-            'diffusion_reactant': diffusion_reactant,
-            'diffusion_product': diffusion_product,
-        })
-
-        # Values are [initial guess, lower bound, upper bound]
-        self.default_vars = {
-            'reduction_potential': [
-                round((self.voltage_to_fit[np.argmax(self.current_to_fit)]
-                       + self.voltage_to_fit[np.argmin(self.current_to_fit)]) / 2, 3),
-                round(min(self.start_voltage_mv, self.reverse_voltage_mv) / 1000, 3),
-                round(max(self.start_voltage_mv, self.reverse_voltage_mv) / 1000, 3),
-            ],
-            'diffusion_reactant': [1e-6, 5e-8, 1e-4],
-            'diffusion_product': [1e-6, 5e-8, 1e-4],
-        }
 
     def fit(
             self,
@@ -463,28 +466,11 @@ class FitE_q(FitMechanism):
         self.alpha = alpha
         self.k_0 = k_0
 
-        # Contains only variables with a user-specified fixed value
-        self.fixed_vars = self._non_none_dict({
-            'reduction_potential': reduction_potential,
-            'diffusion_reactant': diffusion_reactant,
-            'diffusion_product': diffusion_product,
-            'alpha': alpha,
-            'k_0': k_0,
-        })
+        self.fixed_vars |= {'alpha': alpha, 'k_0': k_0}
+        self.fixed_vars = self._non_none_dict(self.fixed_vars)
 
-        # Values are [initial guess, lower bound, upper bound]
-        self.default_vars = {
-            'reduction_potential': [
-                round((self.voltage_to_fit[np.argmax(self.current_to_fit)]
-                       + self.voltage_to_fit[np.argmin(self.current_to_fit)]) / 2, 3),
-                round(min(self.start_voltage_mv, self.reverse_voltage_mv) / 1000, 3),
-                round(max(self.start_voltage_mv, self.reverse_voltage_mv) / 1000, 3),
-            ],
-            'diffusion_reactant': [1e-6, 5e-8, 1e-4],
-            'diffusion_product': [1e-6, 5e-8, 1e-4],
-            'alpha': [0.5, 0.01, 0.99],
-            'k_0': [1e-5, 1e-8, 1e-3],
-        }
+        # default [initial guess, lower bound, upper bound]
+        self.default_vars |= {'alpha': [0.5, 0.01, 0.99], 'k_0': [1e-5, 1e-8, 1e-3]}
 
     def fit(
             self,
