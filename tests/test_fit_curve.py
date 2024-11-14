@@ -86,6 +86,8 @@ class TestFitE_rev:
             (-0.02, 3e-6, 5e-6, None, (2e-6, 1.1e-6, 5e-6), 1.1e-6),
             (None, None, None, 0.0, (0.0, 1.1e-6, 5e-6), 1.1e-6),
             (None, None, None, None, (2e-6, 4e-6), (2.1e-6, 5e-6, 1e-6)),
+            (None, None, None, 0.0, (9e-7, 1.1e-6, 5e-6), 1.1e-6),
+            (None, None, None, 0.0, (1.1e-6, 5e-6), (1.1e-6, 5e-6, 4e-6)),
         ],
     )
     def test_fit(self, red_pot, d_r, d_p, fit_red_pot, fit_d_r, fit_d_p):

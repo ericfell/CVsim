@@ -84,25 +84,24 @@ class FitMechanism(ABC):
         self.diffusion_reactant = diffusion_reactant
         self.diffusion_product = diffusion_product
 
-        self.start_voltage = voltage_to_fit[0]
-        self.start_voltage_mv = round(self.start_voltage * 1000)
+        self.start_voltage = round(voltage_to_fit[0], 3)
+        start_voltage_mv = round(self.start_voltage * 1000)
 
-        if round(voltage_to_fit[VOLTAGE_OSCILLATION_LIMIT]) > self.start_voltage:
+        if round(voltage_to_fit[VOLTAGE_OSCILLATION_LIMIT], 3) > self.start_voltage:
             # scan starts towards more positive
-            self.reverse_voltage = max(voltage_to_fit)
-            self.reverse_voltage_mv = round(self.reverse_voltage * 1000)
+            self.reverse_voltage = round(max(voltage_to_fit), 3)
         else:
             # scan starts towards more negative
-            self.reverse_voltage = min(voltage_to_fit)
-            self.reverse_voltage_mv = round(self.reverse_voltage * 1000)
+            self.reverse_voltage = round(min(voltage_to_fit), 3)
+        reverse_voltage_mv = round(self.reverse_voltage * 1000)
 
         # make a cleaner x array
         scan_direction = -1 if self.start_voltage < self.reverse_voltage else 1
         delta_theta = scan_direction * self.step_size
 
-        thetas = [round((i - delta_theta)) for i in [self.start_voltage_mv, self.reverse_voltage_mv]]
+        thetas = [round((i - delta_theta)) for i in [start_voltage_mv, reverse_voltage_mv]]
         forward_scan = np.arange(thetas[0], thetas[1], step=delta_theta * -1)
-        reverse_scan = np.append(forward_scan[-2::-1], self.start_voltage_mv)
+        reverse_scan = np.append(forward_scan[-2::-1], start_voltage_mv)
         self.voltage_to_fit = np.concatenate([forward_scan, reverse_scan]) / 1000
 
         # Contains only variables with a user-specified fixed value.
@@ -119,8 +118,8 @@ class FitMechanism(ABC):
             'reduction_potential': [
                 round((self.voltage_to_fit[np.argmax(self.current_to_fit)]
                        + self.voltage_to_fit[np.argmin(self.current_to_fit)]) / 2, 3),
-                round(min(self.start_voltage, self.reverse_voltage), 3),
-                round(max(self.start_voltage, self.reverse_voltage), 3),
+                min(self.start_voltage, self.reverse_voltage),
+                max(self.start_voltage, self.reverse_voltage),
             ],
             'diffusion_reactant': [1e-6, 5e-8, 1e-4],
             'diffusion_product': [1e-6, 5e-8, 1e-4],
@@ -159,13 +158,12 @@ class FitMechanism(ABC):
                 fit_default_vars[param][1] = value[0]
                 fit_default_vars[param][2] = value[1]
             elif isinstance(value, tuple) and len(value) == 3:
-                if value[1] >= value[2]:
-                    raise ValueError(f"'{param}' lower bound must be lower than upper bound")
+                if not value[1] < value[0] < value[2]:#if value[1] >= value[2]:
+                    raise ValueError(f"'{param}' lower bound must be lower than upper bound and guess between them")
                 fit_default_vars[param] = list(value)
-            else:
-                if not None:
-                    raise ValueError(f"'{param}' allowed inputs: "
-                                     f"None | float | tuple[float, float] | tuple[float, float, float]")
+            elif not None:
+                raise ValueError(f"'{param}' allowed inputs: "
+                                 f"None | float | tuple[float, float] | tuple[float, float, float]")
         return fit_default_vars
 
     @abstractmethod
@@ -294,7 +292,7 @@ class FitE_rev(FitMechanism):
                 # check if default initial guess is outside bounds, set guess to avg of bounds
                 fit_default_vars[param] = [(lower + upper) / 2, lower, upper]
                 # check if user's guess was outside bounds
-                if initial != self.default_vars[param][0]:
+                if initial != self.default_vars[param][0]:  # TODO is this redundant?
                     raise ValueError(f"Initial guess for '{param}' is outside user-defined bounds")
 
         print(f"final fitting vars: {fit_default_vars}")
@@ -356,8 +354,8 @@ class FitE_rev(FitMechanism):
                 return args[var_index[param]]
 
             _, i_fit = E_rev(
-                start_potential=round(self.start_voltage_mv / 1000, 3),
-                switch_potential=round(self.reverse_voltage_mv / 1000, 3),
+                start_potential=self.start_voltage,
+                switch_potential=self.reverse_voltage,
                 reduction_potential=fetch('reduction_potential'),
                 scan_rate=self.scan_rate,
                 c_bulk=self.c_bulk,
@@ -388,7 +386,7 @@ class FitE_rev(FitMechanism):
 
         # Semi-analytical method does not compute the first point (i.e. time=0)
         # so the starting voltage data point with a zero current is reinserted
-        self.voltage_to_fit = np.insert(self.voltage_to_fit, 0, self.start_voltage_mv / 1000)
+        self.voltage_to_fit = np.insert(self.voltage_to_fit, 0, self.start_voltage)
         current_fit = np.insert(current_fit, 0, 0)
         return self.voltage_to_fit, current_fit
 
@@ -605,8 +603,8 @@ class FitE_q(FitMechanism):
                 return args[var_index[param]]
 
             _, i_fit = E_q(
-                start_potential=round(self.start_voltage_mv / 1000, 3),
-                switch_potential=round(self.reverse_voltage_mv / 1000, 3),
+                start_potential=self.start_voltage,
+                switch_potential=self.reverse_voltage,
                 reduction_potential=fetch('reduction_potential'),
                 scan_rate=self.scan_rate,
                 c_bulk=self.c_bulk,
@@ -642,6 +640,6 @@ class FitE_q(FitMechanism):
 
         # Semi-analytical method does not compute the first point (i.e. time=0)
         # so the starting voltage data point with a zero current is reinserted
-        self.voltage_to_fit = np.insert(self.voltage_to_fit, 0, self.start_voltage_mv / 1000)
+        self.voltage_to_fit = np.insert(self.voltage_to_fit, 0, self.start_voltage)
         current_fit = np.insert(current_fit, 0, 0)
         return self.voltage_to_fit, current_fit
