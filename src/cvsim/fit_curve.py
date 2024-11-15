@@ -158,7 +158,7 @@ class FitMechanism(ABC):
                 fit_default_vars[param][1] = value[0]
                 fit_default_vars[param][2] = value[1]
             elif isinstance(value, tuple) and len(value) == 3:
-                if not value[1] < value[0] < value[2]:#if value[1] >= value[2]:
+                if not value[1] < value[0] < value[2]:
                     raise ValueError(f"'{param}' lower bound must be lower than upper bound and guess between them")
                 fit_default_vars[param] = list(value)
             elif not None:
@@ -290,6 +290,7 @@ class FitE_rev(FitMechanism):
         for param, (initial, lower, upper) in fit_default_vars.items():
             if not lower < initial < upper:
                 # check if default initial guess is outside bounds, set guess to avg of bounds
+                # TODO not useful if spans many order of magnitudes, use logarithmic mean?
                 fit_default_vars[param] = [(lower + upper) / 2, lower, upper]
                 # check if user's guess was outside bounds
                 if initial != self.default_vars[param][0]:  # TODO is this redundant?
@@ -464,11 +465,17 @@ class FitE_q(FitMechanism):
         self.alpha = alpha
         self.k_0 = k_0
 
-        self.fixed_vars |= {'alpha': alpha, 'k_0': k_0}
+        self.fixed_vars |= {
+            'alpha': alpha,
+            'k_0': k_0,
+        }
         self.fixed_vars = self._non_none_dict(self.fixed_vars)
 
         # default [initial guess, lower bound, upper bound]
-        self.default_vars |= {'alpha': [0.5, 0.01, 0.99], 'k_0': [1e-5, 1e-8, 1e-3]}
+        self.default_vars |= {
+            'alpha': [0.5, 0.01, 0.99],
+            'k_0': [1e-5, 1e-8, 1e-3],
+        }
 
     def fit(
             self,
@@ -539,9 +546,10 @@ class FitE_q(FitMechanism):
         for param, (initial, lower, upper) in fit_default_vars.items():
             if not lower < initial < upper:
                 # check if default initial guess is outside bounds, set guess to avg of bounds
-                fit_default_vars[param] = [(lower + upper) / 2, lower, upper]  # TODO not useful if spans many order of magnitudes
+                # TODO not useful if spans many order of magnitudes, use logarithmic mean?
+                fit_default_vars[param] = [(lower + upper) / 2, lower, upper]
                 # check if user's guess was outside bounds
-                if initial != self.default_vars[param][0]:
+                if initial != self.default_vars[param][0]:  # TODO redundant?
                     raise ValueError(f"Initial guess for '{param}' is outside user-defined bounds")
 
         print(f"final fitting vars: {fit_default_vars}")
