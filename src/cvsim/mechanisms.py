@@ -512,7 +512,7 @@ class EE(CyclicVoltammetryScheme):
     diffusion_product : float
         Diffusion coefficient of product (cm^2/s).
     alpha : float
-        Charge transfer coefficient (no units).
+        Charge transfer coefficient of first redox process (no units).
     alpha_second_e : float
         Charge transfer coefficient of second redox process (no units).
     k_0 : float
