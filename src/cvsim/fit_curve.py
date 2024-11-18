@@ -864,7 +864,7 @@ class FitEE(FitMechanism):
                 # TODO not useful if spans many order of magnitudes, use logarithmic mean?
                 fit_default_vars[param] = [(lower + upper) / 2, lower, upper]
                 # check if user's guess was outside bounds
-                if initial != self.default_vars[param][0]:  # TODO redundant?
+                if initial != self.default_vars[param][0]:  # TODO is this redundant, already checked above?
                     raise ValueError(f"Initial guess for '{param}' is outside user-defined bounds")
 
         print(f"final fitting vars: {fit_default_vars}")
