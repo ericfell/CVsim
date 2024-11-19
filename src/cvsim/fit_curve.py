@@ -84,15 +84,18 @@ class FitMechanism(ABC):
         self.diffusion_reactant = diffusion_reactant
         self.diffusion_product = diffusion_product
 
-        self.start_voltage = round(voltage_to_fit[0], 3)
+        # rounding the start/reverse potentials from the input experimental voltage data to
+        # 2 decimal places helps reduce noise and--based on authors' experience--it is pretty rare
+        # to see start/reverse potentials initialized in the lab being declared to the third decimal place.
+        self.start_voltage = round(voltage_to_fit[0], 2)
         start_voltage_mv = round(self.start_voltage * 1000)
 
-        if round(voltage_to_fit[VOLTAGE_OSCILLATION_LIMIT], 3) > self.start_voltage:
+        if voltage_to_fit[VOLTAGE_OSCILLATION_LIMIT] > self.start_voltage:
             # scan starts towards more positive
-            self.reverse_voltage = round(max(voltage_to_fit), 3)
+            self.reverse_voltage = round(max(voltage_to_fit), 2)
         else:
             # scan starts towards more negative
-            self.reverse_voltage = round(min(voltage_to_fit), 3)
+            self.reverse_voltage = round(min(voltage_to_fit), 2)
         reverse_voltage_mv = round(self.reverse_voltage * 1000)
 
         # make a cleaner x array
