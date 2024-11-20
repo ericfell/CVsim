@@ -179,59 +179,7 @@ class E_rev(CyclicVoltammetryScheme):
     Provides a current-potential profile for a reversible (Nernstian) one electron transfer mechanism.
     This is equation (7:7) from [1].
 
-    Parameters
-    ----------
-    start_potential : float
-        Starting potential of scan (V vs. reference).
-    switch_potential : float
-        Switching potential of scan (V vs. reference).
-    reduction_potential : float
-        Reduction potential of the one-electron transfer process (V vs. reference).
-    scan_rate : float
-        Potential sweep rate (V/s).
-    c_bulk : float
-        Bulk concentration of redox species (mM or mol/m^3).
-    diffusion_reactant : float
-        Diffusion coefficient of reactant (cm^2/s).
-    diffusion_product : float
-        Diffusion coefficient of product (cm^2/s).
-    step_size : float
-        Voltage increment during CV scan (mV).
-        Default is 1.0 mV, a typical potentiostat default.
-    disk_radius : float
-        Radius of disk macro-electrode (mm).
-        Default is 1.5 mm, a typical working electrode.
-    temperature : float
-        Temperature (K).
-        Default is 298.0 K (24.85C).
-
     """
-
-    def __init__(
-            self,
-            start_potential: float,
-            switch_potential: float,
-            reduction_potential: float,
-            scan_rate: float,
-            c_bulk: float,
-            diffusion_reactant: float,
-            diffusion_product: float,
-            step_size: float = 1.0,
-            disk_radius: float = 1.5,
-            temperature: float = 298.0,
-    ) -> None:
-        super().__init__(
-            start_potential,
-            switch_potential,
-            reduction_potential,
-            scan_rate,
-            c_bulk,
-            diffusion_reactant,
-            diffusion_product,
-            step_size,
-            disk_radius,
-            temperature,
-        )
 
     def simulate(self) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -512,7 +460,7 @@ class EE(CyclicVoltammetryScheme):
     diffusion_product : float
         Diffusion coefficient of product (cm^2/s).
     alpha : float
-        Charge transfer coefficient (no units).
+        Charge transfer coefficient of first redox process (no units).
     alpha_second_e : float
         Charge transfer coefficient of second redox process (no units).
     k_0 : float
