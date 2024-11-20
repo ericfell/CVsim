@@ -169,11 +169,6 @@ class FitMechanism(ABC):
                                  f"None | float | tuple[float, float] | tuple[float, float, float]")
         return fit_default_vars
 
-    @abstractmethod
-    def fit(self, *args):
-        """Fit designated mechanism"""
-        return NotImplementedError
-
     def _get_fitting_params(self) -> list[str]:
         fitting_params = [
             param for param in self.default_vars.keys()
