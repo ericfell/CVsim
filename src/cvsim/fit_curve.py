@@ -4,7 +4,7 @@ simulated CV for one- and two-electron processes.
 """
 
 from abc import ABC, abstractmethod
-from typing import TypeAlias
+from typing import TypeAlias, Callable
 import numpy as np
 from scipy.optimize import curve_fit
 from .mechanisms import CyclicVoltammetryScheme, E_rev, E_q, E_qC, EE, SquareScheme
@@ -109,11 +109,11 @@ class FitMechanism(ABC):
 
         # Contains only variables with a user-specified fixed value.
         # These params are shared by all CVsim mechanisms
-        self.fixed_vars = self._non_none_dict({
+        self.fixed_vars = {
             'reduction_potential': reduction_potential,
             'diffusion_reactant': diffusion_reactant,
             'diffusion_product': diffusion_product,
-        })
+        }
 
         # Values are [initial guess, lower bound, upper bound]
         # These params are shared by all CVsim mechanisms
@@ -169,63 +169,24 @@ class FitMechanism(ABC):
                                  f"None | float | tuple[float, float] | tuple[float, float, float]")
         return fit_default_vars
 
-    def _get_fitting_params(self) -> list[str]:
-        fitting_params = [
-            param for param in self.default_vars.keys()
-            if param not in self.fixed_vars.keys()
-        ]
-        return fitting_params
+    @abstractmethod
+    def _simulate(self, get_var: Callable[[str], float]) -> tuple[np.ndarray, np.ndarray]:
+        raise NotImplementedError
 
-
-class FitE_rev(FitMechanism):
-    """Scheme for fitting a CV for a reversible (Nernstian) one electron transfer mechanism."""
-
-    def fit(
-            self,
-            reduction_potential: _ParamGuess = None,
-            diffusion_reactant: _ParamGuess = None,
-            diffusion_product: _ParamGuess = None,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        """
-        Fits the CV for a reversible (Nernstian) one electron transfer mechanism.
-        If a parameter is given, it must be a: float for initial guess of parameter; tuple[float, float] for
-        (lower bound, upper bound) of the initial guess; or tuple[float, float, float] for
-        (initial guess, lower bound, upper bound).
-
-        Parameters
-        ----------
-        reduction_potential : None | float | tuple[float, float] | tuple[float, float, float]
-            Optional guess for the reduction potential (V vs. reference).
-            Defaults to None.
-        diffusion_reactant : None | float | tuple[float, float] | tuple[float, float, float]
-            Optional guess for the diffusion coefficient of reactant (cm^2/s).
-            Defaults to None.
-        diffusion_product : None | float | tuple[float, float] | tuple[float, float, float]
-            Optional guess for the diffusion coefficient of product (cm^2/s).
-            Defaults to None.
-
-        Returns
-        -------
-        voltage_to_fit : np.ndarray
-            Array of potential (V) values of the CV fit.
-        current_fit : np.ndarray
-            Array of current (A) values of the CV fit.
-
-        """
-
-        fit_vars = self._non_none_dict({
-            'reduction_potential': reduction_potential,
-            'diffusion_reactant': diffusion_reactant,
-            'diffusion_product': diffusion_product,
-        })
+    def _fit(self, fit_vars: dict[str, float]) -> tuple[np.ndarray, np.ndarray]:
+        fit_vars = self._non_none_dict(fit_vars)
+        fixed_vars = self._non_none_dict(self.fixed_vars)
 
         # check intersection of fixed_vars / fit_vars dicts. if so raise error
-        intersection_errors = self.fixed_vars.keys() & fit_vars.keys()
+        intersection_errors = fixed_vars.keys() & fit_vars.keys()
         if intersection_errors:
             raise ValueError(f"Cannot input fixed value and guess value for {*intersection_errors,}")
 
         # get params that will be fit
-        fitting_params = self._get_fitting_params()
+        fitting_params = [
+            param for param in self.default_vars.keys()
+            if param not in fixed_vars.keys()
+        ]
 
         # trim dict to set of fit variables
         fit_default_vars = {k: v for k, v in self.default_vars.items() if k in fitting_params}
@@ -247,7 +208,7 @@ class FitE_rev(FitMechanism):
 
         print(f'Initial guesses: {initial_guesses}')
         print(f'Lower/Upper bounds: {lower_bounds}/{upper_bounds}')
-        print(f'Fixed params: {list(self.fixed_vars)}')
+        print(f'Fixed params: {list(fixed_vars)}')
         print(f'Fitting for: {list(fitting_params)}')
 
         def fit_function(
@@ -255,8 +216,7 @@ class FitE_rev(FitMechanism):
                 *args: float,
         ) -> np.ndarray:
             """
-            Inner function used by scipy's curve_fit to fit a CV according to the
-            one-electron reversible mechanism.
+            Inner function used by scipy's curve_fit to fit a CV according to the mechanism.
 
             Parameters
             ----------
@@ -296,31 +256,23 @@ class FitE_rev(FitMechanism):
                         return the value of the parameter in the args passed in via curve_fit.
 
                 """
-                if param in self.fixed_vars:
-                    return self.fixed_vars[param]
+                if param in fixed_vars:
+                    return fixed_vars[param]
                 return args[var_index[param]]
 
-            _, i_fit = E_rev(
-                start_potential=self.start_voltage,
-                switch_potential=self.reverse_voltage,
-                reduction_potential=fetch('reduction_potential'),
-                scan_rate=self.scan_rate,
-                c_bulk=self.c_bulk,
-                diffusion_reactant=fetch('diffusion_reactant'),
-                diffusion_product=fetch('diffusion_product'),
-                step_size=self.step_size,
-                disk_radius=self.disk_radius,
-                temperature=self.temperature,
-            ).simulate()
+            _, i_fit = self._simulate(fetch)
             return i_fit
 
         # fit raw data but exclude first data point, as semi-analytical method skips time=0
+        # TODO need normalization of the current?
         fit_results = curve_fit(
             f=fit_function,
             xdata=self.voltage_to_fit,
             ydata=self.current_to_fit[1:],
+            #ydata=(self.current_to_fit[1:] / max(abs(self.current_to_fit[1:]))), # normalized
             p0=initial_guesses,
             bounds=[lower_bounds, upper_bounds],
+            #x_scale=[1,1e5],
         )
         # TODO: return the optimal parameters, transform popt from an array into a dict keyed by fitting param name?
         popt, pcov = list(fit_results)
@@ -336,6 +288,63 @@ class FitE_rev(FitMechanism):
         self.voltage_to_fit = np.insert(self.voltage_to_fit, 0, self.start_voltage)
         current_fit = np.insert(current_fit, 0, 0)
         return self.voltage_to_fit, current_fit
+
+
+class FitE_rev(FitMechanism):
+    """Scheme for fitting a CV for a reversible (Nernstian) one electron transfer mechanism."""
+
+    def _simulate(self, get_var: Callable[[str], float]) -> tuple[np.ndarray, np.ndarray]:
+        return E_rev(
+                start_potential=self.start_voltage,
+                switch_potential=self.reverse_voltage,
+                reduction_potential=get_var('reduction_potential'),
+                scan_rate=self.scan_rate,
+                c_bulk=self.c_bulk,
+                diffusion_reactant=get_var('diffusion_reactant'),
+                diffusion_product=get_var('diffusion_product'),
+                step_size=self.step_size,
+                disk_radius=self.disk_radius,
+                temperature=self.temperature,
+        ).simulate()
+
+    def fit(
+            self,
+            reduction_potential: _ParamGuess = None,
+            diffusion_reactant: _ParamGuess = None,
+            diffusion_product: _ParamGuess = None,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Fits the CV for a reversible (Nernstian) one electron transfer mechanism.
+        If a parameter is given, it must be a: float for initial guess of parameter; tuple[float, float] for
+        (lower bound, upper bound) of the initial guess; or tuple[float, float, float] for
+        (initial guess, lower bound, upper bound).
+
+        Parameters
+        ----------
+        reduction_potential : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the reduction potential (V vs. reference).
+            Defaults to None.
+        diffusion_reactant : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the diffusion coefficient of reactant (cm^2/s).
+            Defaults to None.
+        diffusion_product : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the diffusion coefficient of product (cm^2/s).
+            Defaults to None.
+
+        Returns
+        -------
+        voltage_to_fit : np.ndarray
+            Array of potential (V) values of the CV fit.
+        current_fit : np.ndarray
+            Array of current (A) values of the CV fit.
+
+        """
+
+        return self._fit({
+            'reduction_potential': reduction_potential,
+            'diffusion_reactant': diffusion_reactant,
+            'diffusion_product': diffusion_product,
+        })
 
 
 class FitE_q(FitMechanism):
@@ -415,13 +424,28 @@ class FitE_q(FitMechanism):
             'alpha': alpha,
             'k_0': k_0,
         }
-        self.fixed_vars = self._non_none_dict(self.fixed_vars)
 
         # default [initial guess, lower bound, upper bound]
         self.default_vars |= {
             'alpha': [0.5, 0.01, 0.99],
             'k_0': [1e-5, 1e-8, 1e-3],
         }
+
+    def _simulate(self, get_var: Callable[[str], float]) -> tuple[np.ndarray, np.ndarray]:
+        return E_q(
+            start_potential=self.start_voltage,
+            switch_potential=self.reverse_voltage,
+            reduction_potential=get_var('reduction_potential'),
+            scan_rate=self.scan_rate,
+            c_bulk=self.c_bulk,
+            diffusion_reactant=get_var('diffusion_reactant'),
+            diffusion_product=get_var('diffusion_product'),
+            alpha=get_var('alpha'),
+            k_0=get_var('k_0'),
+            step_size=self.step_size,
+            disk_radius=self.disk_radius,
+            temperature=self.temperature,
+        ).simulate()
 
     def fit(
             self,
@@ -463,137 +487,13 @@ class FitE_q(FitMechanism):
             Array of current (A) values of the CV fit.
 
         """
-
-        fit_vars = self._non_none_dict({
+        return self._fit({
             'reduction_potential': reduction_potential,
             'diffusion_reactant': diffusion_reactant,
             'diffusion_product': diffusion_product,
             'alpha': alpha,
             'k_0': k_0,
         })
-
-        # check intersection of fixed_vars / fit_vars dicts. if so raise error
-        intersection_errors = self.fixed_vars.keys() & fit_vars.keys()
-        if intersection_errors:
-            raise ValueError(f"Cannot input fixed value and guess value for {*intersection_errors,}")
-
-        # get params that will be fit
-        fitting_params = self._get_fitting_params()
-
-        # trim dict to set of fit variables
-        fit_default_vars = {k: v for k, v in self.default_vars.items() if k in fitting_params}
-        var_index = {var: index for index, var in enumerate(fit_default_vars.keys())}
-
-        fit_default_vars = self._fit_var_checker(fit_vars, fit_default_vars)
-
-        for param, (initial, lower, upper) in fit_default_vars.items():
-            if not lower < initial < upper:
-                # check if default initial guess is outside bounds, set guess to avg of bounds
-                # TODO not useful if spans many order of magnitudes, use logarithmic mean?
-                fit_default_vars[param] = [(lower + upper) / 2, lower, upper]
-                # check if user's guess was outside bounds
-                if initial != self.default_vars[param][0]:  # TODO redundant?
-                    raise ValueError(f"Initial guess for '{param}' is outside user-defined bounds")
-
-        print(f"final fitting vars: {fit_default_vars}")
-        initial_guesses, lower_bounds, upper_bounds = zip(*fit_default_vars.values())
-
-        print(f'Initial guesses: {initial_guesses}')
-        print(f'Lower/Upper bounds: {lower_bounds}/{upper_bounds}')
-        print(f'Fixed params: {list(self.fixed_vars)}')
-        print(f'Fitting for: {list(fitting_params)}')
-
-        def fit_function(
-                x: list[float] | np.ndarray,  # pylint: disable=unused-argument
-                *args: float,
-        ) -> np.ndarray:
-            """
-            Inner function used by scipy's curve_fit to fit a CV according to the
-            one-electron quasi-reversible mechanism.
-
-            Parameters
-            ----------
-            x : list[float] | np.ndarray
-                Array of voltage data of the CV to fit.
-            *args : float
-                Value(s) for parameter(s) that curve_fit tries during fitting procedure.
-
-            Returns
-            -------
-            i_fit : np.ndarray
-                Array of current (A) values of the CV fit.
-
-            Notes
-            -----
-            Scipy's `curve_fit` does not allow for the user to pass in a function with various
-            dynamic parameters so `fit_function` and its inner function `fetch` are used to pass
-            CV simulations to `curve_fit` with optional inputs of initial guesses/bounds from `fit`.
-
-            """
-
-            print(f"trying values: {args}")
-
-            def fetch(param: str) -> float:
-                """
-                Helper function to retrieve value for fixed variable if it exists, or retrieve the
-                guess for the parameter that is passed in via curve_fit
-
-                Parameters
-                ----------
-                param : str
-                    Name of desired CV simulation's input parameter.
-
-                Returns
-                -------
-                float: If param exists in fixed_vars then its value is returned, otherwise
-                        return the value of the parameter in the args passed in via curve_fit.
-
-                """
-                if param in self.fixed_vars:
-                    return self.fixed_vars[param]
-                return args[var_index[param]]
-
-            _, i_fit = E_q(
-                start_potential=self.start_voltage,
-                switch_potential=self.reverse_voltage,
-                reduction_potential=fetch('reduction_potential'),
-                scan_rate=self.scan_rate,
-                c_bulk=self.c_bulk,
-                diffusion_reactant=fetch('diffusion_reactant'),
-                diffusion_product=fetch('diffusion_product'),
-                alpha=fetch('alpha'),
-                k_0=fetch('k_0'),
-                step_size=self.step_size,
-                disk_radius=self.disk_radius,
-                temperature=self.temperature,
-            ).simulate()
-            return i_fit
-
-        # fit raw data but exclude first data point, as semi-analytical method skips time=0
-        # TODO need normalization of the current?
-        fit_results = curve_fit(
-            f=fit_function,
-            xdata=self.voltage_to_fit,
-            ydata=self.current_to_fit[1:],
-            #ydata=(self.current_to_fit[1:] / max(abs(self.current_to_fit[1:]))), # normalized
-            p0=initial_guesses,
-            bounds=[lower_bounds, upper_bounds],
-            #x_scale=[1,1e5],
-        )
-        # TODO: return the optimal parameters, transform popt from an array into a dict keyed by fitting param name?
-        popt, pcov = list(fit_results)
-        current_fit = fit_function(self.voltage_to_fit, *popt)
-        sigma = np.sqrt(np.diag(pcov))  # one standard deviation of the parameters
-
-        for val, error, param in zip(popt, sigma, fitting_params):
-            print(f"Final fit: '{param}': {val:.2E} +/- {error:.0E}")
-        print(f"Ill-conditioned if large: {np.linalg.cond(pcov)}")  # remove
-
-        # Semi-analytical method does not compute the first point (i.e. time=0)
-        # so the starting voltage data point with a zero current is reinserted
-        self.voltage_to_fit = np.insert(self.voltage_to_fit, 0, self.start_voltage)
-        current_fit = np.insert(current_fit, 0, 0)
-        return self.voltage_to_fit, current_fit
 
 
 class FitEE(FitMechanism):
@@ -700,7 +600,6 @@ class FitEE(FitMechanism):
             'k_0': k_0,
             'k_0_second_e': k_0_second_e,
         }
-        self.fixed_vars = self._non_none_dict(self.fixed_vars)
 
         # default [initial guess, lower bound, upper bound]
         self.default_vars |= {
@@ -716,6 +615,26 @@ class FitEE(FitMechanism):
             'k_0': [1e-5, 1e-8, 1e-3],
             'k_0_second_e': [1e-5, 1e-8, 1e-3],
         }
+
+    def _simulate(self, get_var: Callable[[str], float]) -> tuple[np.ndarray, np.ndarray]:
+        return EE(
+            start_potential=self.start_voltage,
+            switch_potential=self.reverse_voltage,
+            reduction_potential=get_var('reduction_potential'),
+            second_reduction_potential=get_var('second_reduction_potential'),
+            scan_rate=self.scan_rate,
+            c_bulk=self.c_bulk,
+            diffusion_reactant=get_var('diffusion_reactant'),
+            diffusion_intermediate=get_var('diffusion_intermediate'),
+            diffusion_product=get_var('diffusion_product'),
+            alpha=get_var('alpha'),
+            alpha_second_e=get_var('alpha_second_e'),
+            k_0=get_var('k_0'),
+            k_0_second_e=get_var('k_0_second_e'),
+            step_size=self.step_size,
+            disk_radius=self.disk_radius,
+            temperature=self.temperature,
+        ).simulate()
 
     def fit(
             self,
@@ -774,7 +693,7 @@ class FitEE(FitMechanism):
 
         """
 
-        fit_vars = self._non_none_dict({
+        return self._fit({
             'reduction_potential': reduction_potential,
             'second_reduction_potential': second_reduction_potential,
             'diffusion_reactant': diffusion_reactant,
@@ -785,130 +704,3 @@ class FitEE(FitMechanism):
             'k_0': k_0,
             'k_0_second_e': k_0_second_e,
         })
-
-        # check intersection of fixed_vars / fit_vars dicts. if so raise error
-        intersection_errors = self.fixed_vars.keys() & fit_vars.keys()
-        if intersection_errors:
-            raise ValueError(f"Cannot input fixed value and guess value for {*intersection_errors,}")
-
-        # get params that will be fit
-        fitting_params = self._get_fitting_params()
-
-        # trim dict to set of fit variables
-        fit_default_vars = {k: v for k, v in self.default_vars.items() if k in fitting_params}
-        var_index = {var: index for index, var in enumerate(fit_default_vars.keys())}
-
-        fit_default_vars = self._fit_var_checker(fit_vars, fit_default_vars)
-
-        for param, (initial, lower, upper) in fit_default_vars.items():
-            if not lower < initial < upper:
-                # check if default initial guess is outside bounds, set guess to avg of bounds
-                # TODO not useful if spans many order of magnitudes, use logarithmic mean?
-                fit_default_vars[param] = [(lower + upper) / 2, lower, upper]
-                # check if user's guess was outside bounds
-                if initial != self.default_vars[param][0]:  # TODO is this redundant, already checked above?
-                    raise ValueError(f"Initial guess for '{param}' is outside user-defined bounds")
-
-        print(f"final fitting vars: {fit_default_vars}")
-        initial_guesses, lower_bounds, upper_bounds = zip(*fit_default_vars.values())
-
-        print(f'Initial guesses: {initial_guesses}')
-        print(f'Lower/Upper bounds: {lower_bounds}/{upper_bounds}')
-        print(f'Fixed params: {list(self.fixed_vars)}')
-        print(f'Fitting for: {list(fitting_params)}')
-
-        def fit_function(
-                x: list[float] | np.ndarray,  # pylint: disable=unused-argument
-                *args: float,
-        ) -> np.ndarray:
-            """
-            Inner function used by scipy's curve_fit to fit a CV according to the
-            two successive one-electron quasi-reversible mechanism.
-
-            Parameters
-            ----------
-            x : list[float] | np.ndarray
-                Array of voltage data of the CV to fit.
-            *args : float
-                Value(s) for parameter(s) that curve_fit tries during fitting procedure.
-
-            Returns
-            -------
-            i_fit : np.ndarray
-                Array of current (A) values of the CV fit.
-
-            Notes
-            -----
-            Scipy's `curve_fit` does not allow for the user to pass in a function with various
-            dynamic parameters so `fit_function` and its inner function `fetch` are used to pass
-            CV simulations to `curve_fit` with optional inputs of initial guesses/bounds from `fit`.
-
-            """
-
-            print(f"trying values: {args}")
-
-            def fetch(param: str) -> float:
-                """
-                Helper function to retrieve value for fixed variable if it exists, or retrieve the
-                guess for the parameter that is passed in via curve_fit
-
-                Parameters
-                ----------
-                param : str
-                    Name of desired CV simulation's input parameter.
-
-                Returns
-                -------
-                float: If param exists in fixed_vars then its value is returned, otherwise
-                        return the value of the parameter in the args passed in via curve_fit.
-
-                """
-                if param in self.fixed_vars:
-                    return self.fixed_vars[param]
-                return args[var_index[param]]
-
-            _, i_fit = EE(
-                start_potential=self.start_voltage,
-                switch_potential=self.reverse_voltage,
-                reduction_potential=fetch('reduction_potential'),
-                second_reduction_potential=fetch('second_reduction_potential'),
-                scan_rate=self.scan_rate,
-                c_bulk=self.c_bulk,
-                diffusion_reactant=fetch('diffusion_reactant'),
-                diffusion_intermediate=fetch('diffusion_intermediate'),
-                diffusion_product=fetch('diffusion_product'),
-                alpha=fetch('alpha'),
-                alpha_second_e=fetch('alpha_second_e'),
-                k_0=fetch('k_0'),
-                k_0_second_e=fetch('k_0_second_e'),
-                step_size=self.step_size,
-                disk_radius=self.disk_radius,
-                temperature=self.temperature,
-            ).simulate()
-            return i_fit
-
-        # fit raw data but exclude first data point, as semi-analytical method skips time=0
-        # TODO need normalization of the current?
-        fit_results = curve_fit(
-            f=fit_function,
-            xdata=self.voltage_to_fit,
-            ydata=self.current_to_fit[1:],
-            # ydata=(self.current_to_fit[1:] / max(abs(self.current_to_fit[1:]))), # normalized
-            p0=initial_guesses,
-            bounds=[lower_bounds, upper_bounds],
-            # x_scale=[1,1e5],
-        )
-        # TODO: return the optimal parameters, transform popt from an array into a dict keyed by fitting param name?
-        popt, pcov = list(fit_results)
-        current_fit = fit_function(self.voltage_to_fit, *popt)
-        sigma = np.sqrt(np.diag(pcov))  # one standard deviation of the parameters
-
-        for val, error, param in zip(popt, sigma, fitting_params):
-            print(f"Final fit: '{param}': {val:.2E} +/- {error:.0E}")
-        print(f"Ill-conditioned if large: {np.linalg.cond(pcov)}")  # remove
-
-        # Semi-analytical method does not compute the first point (i.e. time=0)
-        # so the starting voltage data point with a zero current is reinserted
-        self.voltage_to_fit = np.insert(self.voltage_to_fit, 0, self.start_voltage)
-        current_fit = np.insert(current_fit, 0, 0)
-        return self.voltage_to_fit, current_fit
