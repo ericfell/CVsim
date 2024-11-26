@@ -188,8 +188,8 @@ class FitMechanism(ABC):
             if param not in fixed_vars.keys()
         ]
 
-        # trim dict to set of fit variables
-        fit_default_vars = {k: v for k, v in self.default_vars.items() if k in fitting_params}
+        # create deep copy of default dict, and trim to set of fit variables
+        fit_default_vars = {k: list(v) for k, v in self.default_vars.items() if k in fitting_params}
         var_index = {var: index for index, var in enumerate(fit_default_vars.keys())}
 
         fit_default_vars = self._fit_var_checker(fit_vars, fit_default_vars)
