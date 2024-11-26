@@ -170,7 +170,7 @@ class FitMechanism(ABC):
         return fit_default_vars
 
     @abstractmethod
-    def _simulate(self, get_var: Callable[[str], float]) -> tuple[np.ndarray, np.ndarray]:
+    def _scheme(self, get_var: Callable[[str], float]) -> CyclicVoltammetryScheme:
         raise NotImplementedError
 
     def _fit(self, fit_vars: dict[str, _ParamGuess]) -> tuple[np.ndarray, np.ndarray]:
@@ -211,7 +211,7 @@ class FitMechanism(ABC):
         print(f'Fixed params: {list(fixed_vars)}')
         print(f'Fitting for: {list(fitting_params)}')
 
-        def fetch(args: tuple[float, ...], param: str) -> float:
+        def get_var(args: tuple[float, ...], param: str) -> float:
             # Helper function to retrieve value for fixed variable if it exists, or retrieve the
             # guess for the parameter that is passed in via curve_fit.
             if param in fixed_vars:
@@ -224,11 +224,11 @@ class FitMechanism(ABC):
         ) -> np.ndarray:
             # Inner function used by scipy's curve_fit to fit a CV according to the mechanism.
             # Note that Scipy's `curve_fit` does not allow for the user to pass in a function with various dynamic
-            # parameters so `fit_function` and `fetch` are used to pass CV simulations to `curve_fit` with optional
+            # parameters so `fit_function` and `get_var` are used to pass CV simulations to `curve_fit` with optional
             # inputs of initial guesses/bounds from `fit`.
             print(f"trying values: {args}")
 
-            _, i_fit = self._simulate(lambda param: fetch(args, param))
+            _, i_fit = self._scheme(lambda param: get_var(args, param)).simulate()
             return i_fit
 
         # fit raw data but exclude first data point, as semi-analytical method skips time=0
@@ -261,7 +261,7 @@ class FitMechanism(ABC):
 class FitE_rev(FitMechanism):
     """Scheme for fitting a CV for a reversible (Nernstian) one electron transfer mechanism."""
 
-    def _simulate(self, get_var: Callable[[str], float]) -> tuple[np.ndarray, np.ndarray]:
+    def _scheme(self, get_var: Callable[[str], float]) -> CyclicVoltammetryScheme:
         return E_rev(
                 start_potential=self.start_voltage,
                 switch_potential=self.reverse_voltage,
@@ -273,7 +273,7 @@ class FitE_rev(FitMechanism):
                 step_size=self.step_size,
                 disk_radius=self.disk_radius,
                 temperature=self.temperature,
-        ).simulate()
+        )
 
     def fit(
             self,
@@ -399,7 +399,7 @@ class FitE_q(FitMechanism):
             'k_0': [1e-5, 1e-8, 1e-3],
         }
 
-    def _simulate(self, get_var: Callable[[str], float]) -> tuple[np.ndarray, np.ndarray]:
+    def _scheme(self, get_var: Callable[[str], float]) -> CyclicVoltammetryScheme:
         return E_q(
             start_potential=self.start_voltage,
             switch_potential=self.reverse_voltage,
@@ -413,7 +413,7 @@ class FitE_q(FitMechanism):
             step_size=self.step_size,
             disk_radius=self.disk_radius,
             temperature=self.temperature,
-        ).simulate()
+        )
 
     def fit(
             self,
@@ -584,7 +584,7 @@ class FitEE(FitMechanism):
             'k_0_second_e': [1e-5, 1e-8, 1e-3],
         }
 
-    def _simulate(self, get_var: Callable[[str], float]) -> tuple[np.ndarray, np.ndarray]:
+    def _scheme(self, get_var: Callable[[str], float]) -> CyclicVoltammetryScheme:
         return EE(
             start_potential=self.start_voltage,
             switch_potential=self.reverse_voltage,
@@ -602,7 +602,7 @@ class FitEE(FitMechanism):
             step_size=self.step_size,
             disk_radius=self.disk_radius,
             temperature=self.temperature,
-        ).simulate()
+        )
 
     def fit(
             self,
