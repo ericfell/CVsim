@@ -211,6 +211,26 @@ class FitMechanism(ABC):
         print(f'Fixed params: {list(fixed_vars)}')
         print(f'Fitting for: {list(fitting_params)}')
 
+        def fetch(args: tuple[float], param: str) -> float:
+            """
+            Helper function to retrieve value for fixed variable if it exists, or retrieve the
+            guess for the parameter that is passed in via curve_fit
+
+            Parameters
+            ----------
+            param : str
+                Name of desired CV simulation's input parameter.
+
+            Returns
+            -------
+            float: If param exists in fixed_vars then its value is returned, otherwise
+                    return the value of the parameter in the args passed in via curve_fit.
+
+            """
+            if param in fixed_vars:
+                return fixed_vars[param]
+            return args[var_index[param]]
+
         def fit_function(
                 x: list[float] | np.ndarray,  # pylint: disable=unused-argument
                 *args: float,
@@ -240,27 +260,7 @@ class FitMechanism(ABC):
 
             print(f"trying values: {args}")
 
-            def fetch(param: str) -> float:
-                """
-                Helper function to retrieve value for fixed variable if it exists, or retrieve the
-                guess for the parameter that is passed in via curve_fit
-
-                Parameters
-                ----------
-                param : str
-                    Name of desired CV simulation's input parameter.
-
-                Returns
-                -------
-                float: If param exists in fixed_vars then its value is returned, otherwise
-                        return the value of the parameter in the args passed in via curve_fit.
-
-                """
-                if param in fixed_vars:
-                    return fixed_vars[param]
-                return args[var_index[param]]
-
-            _, i_fit = self._simulate(fetch)
+            _, i_fit = self._simulate(lambda param: fetch(args, param))
             return i_fit
 
         # fit raw data but exclude first data point, as semi-analytical method skips time=0
