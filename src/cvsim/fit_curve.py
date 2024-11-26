@@ -173,7 +173,7 @@ class FitMechanism(ABC):
     def _simulate(self, get_var: Callable[[str], float]) -> tuple[np.ndarray, np.ndarray]:
         raise NotImplementedError
 
-    def _fit(self, fit_vars: dict[str, float]) -> tuple[np.ndarray, np.ndarray]:
+    def _fit(self, fit_vars: dict[str, _ParamGuess]) -> tuple[np.ndarray, np.ndarray]:
         fit_vars = self._non_none_dict(fit_vars)
         fixed_vars = self._non_none_dict(self.fixed_vars)
 
