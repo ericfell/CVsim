@@ -212,21 +212,8 @@ class FitMechanism(ABC):
         print(f'Fitting for: {list(fitting_params)}')
 
         def fetch(args: tuple[float], param: str) -> float:
-            """
-            Helper function to retrieve value for fixed variable if it exists, or retrieve the
-            guess for the parameter that is passed in via curve_fit
-
-            Parameters
-            ----------
-            param : str
-                Name of desired CV simulation's input parameter.
-
-            Returns
-            -------
-            float: If param exists in fixed_vars then its value is returned, otherwise
-                    return the value of the parameter in the args passed in via curve_fit.
-
-            """
+            # Helper function to retrieve value for fixed variable if it exists, or retrieve the
+            # guess for the parameter that is passed in via curve_fit.
             if param in fixed_vars:
                 return fixed_vars[param]
             return args[var_index[param]]
@@ -235,29 +222,10 @@ class FitMechanism(ABC):
                 x: list[float] | np.ndarray,  # pylint: disable=unused-argument
                 *args: float,
         ) -> np.ndarray:
-            """
-            Inner function used by scipy's curve_fit to fit a CV according to the mechanism.
-
-            Parameters
-            ----------
-            x : list[float] | np.ndarray
-                Array of voltage data of the CV to fit.
-            *args : float
-                Value(s) for parameter(s) that curve_fit tries during fitting procedure.
-
-            Returns
-            -------
-            i_fit : np.ndarray
-                Array of current (A) values of the CV fit.
-
-            Notes
-            -----
-            Scipy's `curve_fit` does not allow for the user to pass in a function with various
-            dynamic parameters so `fit_function` and its inner function `fetch` are used to pass
-            CV simulations to `curve_fit` with optional inputs of initial guesses/bounds from `fit`.
-
-            """
-
+            # Inner function used by scipy's curve_fit to fit a CV according to the mechanism.
+            # Note that Scipy's `curve_fit` does not allow for the user to pass in a function with various dynamic
+            # parameters so `fit_function` and `fetch` are used to pass CV simulations to `curve_fit` with optional
+            # inputs of initial guesses/bounds from `fit`.
             print(f"trying values: {args}")
 
             _, i_fit = self._simulate(lambda param: fetch(args, param))
