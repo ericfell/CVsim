@@ -211,7 +211,7 @@ class FitMechanism(ABC):
         print(f'Fixed params: {list(fixed_vars)}')
         print(f'Fitting for: {list(fitting_params)}')
 
-        def fetch(args: tuple[float], param: str) -> float:
+        def fetch(args: tuple[float, ...], param: str) -> float:
             # Helper function to retrieve value for fixed variable if it exists, or retrieve the
             # guess for the parameter that is passed in via curve_fit.
             if param in fixed_vars:
