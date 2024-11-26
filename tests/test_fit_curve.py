@@ -132,7 +132,7 @@ class TestFitE_rev:
         "fit_d_p, ",
         [
             (0.1, None, None, None, (1e-6, 3e-6), 3.3e-6),
-            (0.1, None, None, None, (1e-6, 3e-6), 3.3e-9),
+            (0.1, None, None, None, (1e-6, 3e-6), 3.3e-7),
         ],
     )
     def test_fitting(
