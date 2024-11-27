@@ -8,6 +8,7 @@ name = "cvsim"
 version = "0.0.1"
 authors = [
     { name="Eric Fell", email="efell@g.harvard.edu" },
+    { name="Jeremy Fell", email="jfell@sfu.ca"},
 ]
 description = "A package for cyclic voltammetry simulation via the semi-analytical method"
 readme = "README.md"
