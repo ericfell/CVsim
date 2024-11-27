@@ -94,6 +94,7 @@ class TestFitE_rev:
             (None, None, None, 0.0, (1.1e-6, 5e-6), (1.1e-6, 5e-6, 4e-6)),
             (None, None, None, [0.1, 0.2], (1.1e-6, 5e-6), (1.1e-6, 5e-7, 4e-6)),
             (None, None, None, (0.0, -0.1, 0.2), (1.1e-6, 5e-6), (5e-6, 4e-6)),
+            (0.1, None, None, None, 2e-9, 3.3e-6),
         ],
     )
     def test_fit_params(
@@ -246,6 +247,7 @@ class TestFitE_q:
             (0.1, 1e-6, 1e-6, None, 1e-4, None, None, None, 0.4, 1e-5),
             (0.1, 1e-6, 1e-6, None, None, None, None, None, 0.4, (0.0, 1.1e-6, 5e-6)),
             (0.1, 1e-6, 1e-6, None, None, None, None, None, (0.6, 0.2), 1e-5),
+            (0.1, 1e-6, None, None, None, None, None, 1e-9, 0.5, 1e-5),
         ],
     )
     def test_fit_params(
@@ -448,6 +450,7 @@ class TestFitEE:
              1e-4, 1e-4),
             (None, None, None, None, None, None, None, None, None, 0.1, 0.2, 1e-6, 1e-6, 1e-6, (0.5, 0.6, 0.9), 0.5,
              1e-4, 1e-4),
+            (None, None, None, None, None, None, None, None, 3e-4, 0.1, 0.2, 1e-6, 1e-10, 1e-6, 0.5, 0.5, 1e-4, None),
         ],
     )
     def test_fit_params(
