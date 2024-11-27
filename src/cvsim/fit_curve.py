@@ -184,7 +184,7 @@ class FitMechanism(ABC):
 
         # get params that will be fit
         fitting_params = [
-            param for param in self.default_vars.keys()
+            param for param in self.default_vars
             if param not in fixed_vars.keys()
         ]
 
