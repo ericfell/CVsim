@@ -232,12 +232,10 @@ class FitMechanism(ABC):
             return i_fit
 
         # fit raw data but exclude first data point, as semi-analytical method skips time=0
-        # TODO need normalization of the current?
         fit_results = curve_fit(
             f=fit_function,
             xdata=self.voltage_to_fit,
             ydata=self.current_to_fit[1:],
-            #ydata=(self.current_to_fit[1:] / max(abs(self.current_to_fit[1:]))), # normalized
             p0=initial_guesses,
             bounds=[lower_bounds, upper_bounds],
             #x_scale=[1,1e5],
@@ -259,7 +257,37 @@ class FitMechanism(ABC):
 
 
 class FitE_rev(FitMechanism):
-    """Scheme for fitting a CV for a reversible (Nernstian) one electron transfer mechanism."""
+    """
+    Scheme for fitting a CV for a reversible (Nernstian) one electron transfer mechanism.
+
+    Parameters
+    ----------
+    voltage_to_fit : list[float] | np.ndarray
+        Array of voltage data of the CV to fit.
+    current_to_fit : list[float] | np.ndarray
+        Array of current data of the CV to fit.
+    scan_rate : float
+        Potential sweep rate (V/s).
+    c_bulk : float
+        Bulk concentration of redox species (mM or mol/m^3).
+    step_size : float
+        Voltage increment during CV scan (mV).
+    disk_radius : float
+        Radius of disk macro-electrode (mm).
+    temperature : float
+        Temperature (K).
+        Default is 298.0 K (24.85C).
+    reduction_potential : float | None
+        Reduction potential of the one-electron transfer process (V vs. reference).
+        If known, can be fixed value, otherwise defaults to None.
+    diffusion_reactant : float | None
+        Diffusion coefficient of reactant (cm^2/s).
+        If known, can be fixed value, otherwise defaults to None.
+    diffusion_product : float | None
+        Diffusion coefficient of product (cm^2/s).
+        If known, can be fixed value, otherwise defaults to None.
+
+    """
 
     def _scheme(self, get_var: Callable[[str], float]) -> CyclicVoltammetryScheme:
         return E_rev(
