@@ -672,3 +672,256 @@ class FitEE(FitMechanism):
             'k_0': k_0,
             'k_0_second_e': k_0_second_e,
         })
+
+
+class FitSquareScheme(FitMechanism):
+    """
+    Scheme for fitting a CV for two quasi-reversible, one-electron transfers of homogeneously
+    interconverting reactants (Square Scheme) mechanism.
+
+    Parameters
+    ----------
+    voltage_to_fit : list[float] | np.ndarray
+        Array of voltage data of the CV to fit.
+    current_to_fit : list[float] | np.ndarray
+        Array of current data of the CV to fit.
+    scan_rate : float
+        Potential sweep rate (V/s).
+    c_bulk : float
+        Bulk concentration of redox species (mM or mol/m^3).
+    step_size : float
+        Voltage increment during CV scan (mV).
+    disk_radius : float
+        Radius of disk macro-electrode (mm).
+    temperature : float
+        Temperature (K).
+        Default is 298.0 K (24.85C).
+    reduction_potential : float | None
+        Reduction potential of the first one-electron transfer process (V vs. reference).
+        If known, can be fixed value, otherwise defaults to None.
+    second_reduction_potential : float | None
+        Reduction potential of the second one-electron transfer process (V vs. reference).
+        If known, can be fixed value, otherwise defaults to None.
+    diffusion_reactant : float | None
+        Diffusion coefficient of reactant (cm^2/s).
+        If known, can be fixed value, otherwise defaults to None.
+    diffusion_product : float | None
+        Diffusion coefficient of product (cm^2/s).
+        If known, can be fixed value, otherwise defaults to None.
+    alpha : float | None
+        Charge transfer coefficient of first redox process (no units).
+        If known, can be fixed value, otherwise defaults to None.
+    alpha_second_e : float | None
+        Charge transfer coefficient of second redox process (no units).
+        If known, can be fixed value, otherwise defaults to None.
+    k_0 : float | None
+        Standard electrochemical rate constant of first redox process (cm/s).
+        If known, can be fixed value, otherwise defaults to None.
+    k_0_second_e : float | None
+        Standard electrochemical rate constant of second redox process (cm/s).
+        If known, can be fixed value, otherwise defaults to None.
+    k_forward_first : float | None
+        First order forward chemical rate constant for first redox species (1/s).
+        If known, can be fixed value, otherwise defaults to None.
+    k_backward_first : float | None
+        First order backward chemical rate constant for first redox species (1/s).
+        If known, can be fixed value, otherwise defaults to None.
+    k_forward_second : float | None
+        First order forward chemical rate constant for second redox species (1/s).
+        If known, can be fixed value, otherwise defaults to None.
+    k_backward_second : float | None
+        First order backward chemical rate constant for second redox species (1/s).
+        If known, can be fixed value, otherwise defaults to None.
+
+    """
+
+    def __init__(
+            self,
+            voltage_to_fit: list[float] | np.ndarray,
+            current_to_fit: list[float] | np.ndarray,
+            scan_rate: float,
+            c_bulk: float,
+            step_size: float,
+            disk_radius: float,
+            temperature: float = 298.0,
+            reduction_potential: float | None = None,
+            second_reduction_potential: float | None = None,
+            diffusion_reactant: float | None = None,
+            diffusion_product: float | None = None,
+            alpha: float | None = None,
+            alpha_second_e: float | None = None,
+            k_0: float | None = None,
+            k_0_second_e: float | None = None,
+            k_forward_first: float | None = None,
+            k_backward_first: float | None = None,
+            k_forward_second: float | None = None,
+            k_backward_second: float | None = None,
+    ) -> None:
+        super().__init__(
+            voltage_to_fit,
+            current_to_fit,
+            scan_rate,
+            c_bulk,
+            step_size,
+            disk_radius,
+            temperature,
+            reduction_potential,
+            diffusion_reactant,
+            diffusion_product,
+        )
+
+        self._ensure_open_unit_interval_or_none('alpha', alpha)
+        self._ensure_open_unit_interval_or_none('alpha_second_e', alpha_second_e)
+        self._ensure_positive_or_none('k_0', k_0)
+        self._ensure_positive_or_none('k_0_second_e', k_0_second_e)
+        self._ensure_positive_or_none('k_forward_first', k_forward_first)
+        self._ensure_positive_or_none('k_backward_first', k_backward_first)
+        self._ensure_positive_or_none('k_forward_second', k_forward_second)
+        self._ensure_positive_or_none('k_backward_second', k_backward_second)
+
+        self.second_reduction_potential = second_reduction_potential
+        self.alpha = alpha
+        self.alpha_second_e = alpha_second_e
+        self.k_0 = k_0
+        self.k_0_second_e = k_0_second_e
+        self.k_forward_first = k_forward_first
+        self.k_backward_first = k_backward_first
+        self.k_forward_second = k_forward_second
+        self.k_backward_second = k_backward_second
+
+        self.fixed_vars |= {
+            'second_reduction_potential': second_reduction_potential,
+            'alpha': alpha,
+            'alpha_second_e': alpha_second_e,
+            'k_0': k_0,
+            'k_0_second_e': k_0_second_e,
+            'k_forward_first': k_forward_first,
+            'k_backward_first': k_backward_first,
+            'k_forward_second': k_forward_second,
+            'k_backward_second': k_backward_second,
+        }
+
+        # default [initial guess, lower bound, upper bound]
+        self.default_vars |= {
+            'second_reduction_potential': [  # TODO need to think about this
+                round((self.voltage_to_fit[np.argmax(self.current_to_fit)]
+                       + self.voltage_to_fit[np.argmin(self.current_to_fit)]) / 2, 3),
+                min(self.start_voltage, self.reverse_voltage),
+                max(self.start_voltage, self.reverse_voltage),
+            ],
+            'alpha': [0.5, 0.01, 0.99],
+            'alpha_second_e': [0.5, 0.01, 0.99],
+            'k_0': [1e-5, 1e-8, 1e-3],
+            'k_0_second_e': [1e-5, 1e-8, 1e-3],
+            'k_forward_first': [1e-1, 5e-4, 1e3],  # TODO bounds might be too restrictive
+            'k_backward_first': [1e-1, 5e-4, 1e3],
+            'k_forward_second': [1e-1, 5e-4, 1e3],
+            'k_backward_second': [1e-1, 5e-4, 1e3],
+        }
+
+    def _scheme(self, get_var: Callable[[str], float]) -> CyclicVoltammetryScheme:
+        return SquareScheme(
+            start_potential=self.start_voltage,
+            switch_potential=self.reverse_voltage,
+            reduction_potential=get_var('reduction_potential'),
+            second_reduction_potential=get_var('second_reduction_potential'),
+            scan_rate=self.scan_rate,
+            c_bulk=self.c_bulk,
+            diffusion_reactant=get_var('diffusion_reactant'),
+            diffusion_product=get_var('diffusion_product'),
+            alpha=get_var('alpha'),
+            alpha_second_e=get_var('alpha_second_e'),
+            k_0=get_var('k_0'),
+            k_0_second_e=get_var('k_0_second_e'),
+            k_forward_first=get_var('k_forward_first'),
+            k_backward_first=get_var('k_backward_first'),
+            k_forward_second=get_var('k_forward_second'),
+            k_backward_second=get_var('k_backward_second'),
+            step_size=self.step_size,
+            disk_radius=self.disk_radius,
+            temperature=self.temperature,
+        )
+
+    def fit(
+            self,
+            reduction_potential: _ParamGuess = None,
+            second_reduction_potential: _ParamGuess = None,
+            diffusion_reactant: _ParamGuess = None,
+            diffusion_product: _ParamGuess = None,
+            alpha: _ParamGuess = None,
+            alpha_second_e: _ParamGuess = None,
+            k_0: _ParamGuess = None,
+            k_0_second_e: _ParamGuess = None,
+            k_forward_first: _ParamGuess = None,
+            k_backward_first: _ParamGuess = None,
+            k_forward_second: _ParamGuess = None,
+            k_backward_second: _ParamGuess = None,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Fits the CV for a Square Scheme mechanism.
+        If a parameter is given, it must be a: float for initial guess of parameter; tuple[float, float] for
+        (lower bound, upper bound) of the initial guess; or tuple[float, float, float] for
+        (initial guess, lower bound, upper bound).
+
+        Parameters
+        ----------
+        reduction_potential : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the first reduction potential (V vs. reference).
+            Defaults to None.
+        second_reduction_potential : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the second reduction potential (V vs. reference).
+            Defaults to None.
+        diffusion_reactant : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the diffusion coefficient of reactant (cm^2/s).
+            Defaults to None.
+        diffusion_product : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the diffusion coefficient of product (cm^2/s).
+            Defaults to None.
+        alpha : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the first charge transfer coefficient (no units).
+            Defaults to None.
+        alpha_second_e : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the second charge transfer coefficient (no units).
+            Defaults to None.
+        k_0 : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the first standard electrochemical rate constant (cm/s).
+            Defaults to None.
+        k_0_second_e : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the second standard electrochemical rate constant (cm/s).
+            Defaults to None.
+        k_forward_first : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the first order forward chemical rate constant for first redox species (1/s).
+            Defaults to None.
+        k_backward_first : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the first order backward chemical rate constant for first redox species (1/s).
+            Defaults to None.
+        k_forward_second : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the first order forward chemical rate constant for second redox species (1/s).
+            Defaults to None.
+        k_backward_second : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the first order backward chemical rate constant for second redox species (1/s).
+            Defaults to None.
+
+        Returns
+        -------
+        voltage_to_fit : np.ndarray
+            Array of potential (V) values of the CV fit.
+        current_fit : np.ndarray
+            Array of current (A) values of the CV fit.
+
+        """
+
+        return self._fit({
+            'reduction_potential': reduction_potential,
+            'second_reduction_potential': second_reduction_potential,
+            'diffusion_reactant': diffusion_reactant,
+            'diffusion_product': diffusion_product,
+            'alpha': alpha,
+            'alpha_second_e': alpha_second_e,
+            'k_0': k_0,
+            'k_0_second_e': k_0_second_e,
+            'k_forward_first': k_forward_first,
+            'k_backward_first': k_backward_first,
+            'k_forward_second': k_forward_second,
+            'k_backward_second': k_backward_second,
+        })

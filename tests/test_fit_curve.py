@@ -1,8 +1,8 @@
 import pytest
 import numpy as np
 
-from cvsim.fit_curve import FitMechanism, FitE_rev, FitE_q, FitEE
-from cvsim.mechanisms import E_rev, E_q, EE
+from cvsim.fit_curve import FitMechanism, FitE_rev, FitE_q, FitEE, FitSquareScheme
+from cvsim.mechanisms import E_rev, E_q, EE, SquareScheme
 
 
 dummy_voltages, dummy_currents = E_rev(0.3, -0.5, -0.1, 0.1, 1, 1e-6, 2e-6).simulate()
@@ -17,6 +17,11 @@ dummy_voltages3, dummy_currents3 = EE(-0.6, 0.6, -0.05, 0.1, 0.1, 1, 1e-6, 1e-6,
 dummy_voltages3 = np.insert(dummy_voltages3, 0, -0.6)
 dummy_currents3 = np.insert(dummy_currents3, 0, 0.0)
 
+
+
+dummy_voltages5, dummy_currents5 = SquareScheme(-0.5, 0.6, 0.05, 0.15, 0.1, 1, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 2e-3, 1e-1, 2e-1, 1e-3, 3e-3).simulate()
+dummy_voltages5 = np.insert(dummy_voltages5, 0, -0.5)
+dummy_currents5 = np.insert(dummy_currents5, 0, 0.0)
 
 class TestFitMechanism:
 
@@ -583,3 +588,297 @@ class TestFitEE:
             k_0_second_e=fit_sec_k,
         )
         assert v[0] == dummy_voltages3[0]
+
+
+class TestFitSquareScheme:
+    @pytest.mark.parametrize(
+        "voltage_to_fit, "
+        "current_to_fit, "
+        "scan_rate, "
+        "c_bulk, "
+        "step_size, "
+        "disk_radius, "
+        "temperature, "
+        "reduction_potential, "
+        "second_reduction_potential, "
+        "diffusion_reactant, "
+        "diffusion_product, "
+        "alpha, "
+        "alpha_second_e, "
+        "k_0, "
+        "k_0_second_e, "
+        "k_forward_first, "
+        "k_backward_first, "
+        "k_forward_second, "
+        "k_backward_second, ",
+        [
+            (dummy_voltages5, dummy_currents5, -0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages5, dummy_currents5[4:], 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages5, dummy_currents5, 0.1, 0, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages5, dummy_currents5, 0.1, 1, -5, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 0.0, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, -12, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, -1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, -8e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 0.0, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1.2, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages5, dummy_currents, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, -10, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 2, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, -1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 0.0, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, -1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, -1e-3, 1e-3, 1e-3),
+            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, -1e-3, 1e-3),
+            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, -1e-3),
+            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 0.0),
+        ],
+    )
+    def test_init(
+            self,
+            voltage_to_fit,
+            current_to_fit,
+            scan_rate,
+            c_bulk,
+            step_size,
+            disk_radius,
+            temperature,
+            reduction_potential,
+            second_reduction_potential,
+            diffusion_reactant,
+            diffusion_product,
+            alpha,
+            alpha_second_e,
+            k_0,
+            k_0_second_e,
+            k_forward_first,
+            k_backward_first,
+            k_forward_second,
+            k_backward_second,
+    ):
+        with pytest.raises(ValueError):
+            FitSquareScheme(
+                voltage_to_fit=voltage_to_fit,
+                current_to_fit=current_to_fit,
+                scan_rate=scan_rate,
+                c_bulk=c_bulk,
+                step_size=step_size,
+                disk_radius=disk_radius,
+                temperature=temperature,
+                reduction_potential=reduction_potential,
+                second_reduction_potential=second_reduction_potential,
+                diffusion_reactant=diffusion_reactant,
+                diffusion_product=diffusion_product,
+                alpha=alpha,
+                alpha_second_e=alpha_second_e,
+                k_0=k_0,
+                k_0_second_e=k_0_second_e,
+                k_forward_first=k_forward_first,
+                k_backward_first=k_backward_first,
+                k_forward_second=k_forward_second,
+                k_backward_second=k_backward_second,
+            )
+
+    @pytest.mark.parametrize(
+        "red_pot, "
+        "sec_red_pot, "
+        "d_r, "
+        "d_p, "
+        "alph, "
+        "sec_alph, "
+        "k, "
+        "sec_k, "
+        "kf1, "
+        "kb1, "
+        "kf2, "
+        "kb2, "
+        "fit_red_pot, "
+        "fit_sec_red_pot, "
+        "fit_d_r, "
+        "fit_d_p, "
+        "fit_alph, "
+        "fit_sec_alph, "
+        "fit_k, "
+        "fit_sec_k, "
+        "fit_kf1, "
+        "fit_kb1, "
+        "fit_kf2, "
+        "fit_kb2, ",
+        [
+            (0.1, None, None, None, None, None, None, None, None, None, None, None, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3, 1e-3),
+            (None, 0.0, None, None, None, None, None, None, None, None, None, None, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3, 1e-3),
+            (None, None, 3e-6, None, None, None, None, None, None, None, None, None, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3, 1e-3),
+            (None, None, None, 4e-6, None, None, None, None, None, None, None, None, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3, 1e-3),
+            (None, None, None, None, 0.2, None, None, None, None, None, None, None, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3, 1e-3),
+            (None, None, None, None, None, 0.7, None, None, None, None, None, None, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3, 1e-3),
+            (None, None, None, None, None, None, 4e-4, None, None, None, None, None, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3, 1e-3),
+            (None, None, None, None, None, None, None, 3e-4, None, None, None, None, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3, 1e-3),
+            (None, None, None, None, None, None, None, None, 1e-4, None, None, None, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3, 1e-3),
+            (None, None, None, None, None, None, None, None, None, 1e-4, None, None, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3, 1e-3),
+            (None, None, None, None, None, None, None, None, None, None, 1e-4, None, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3, 1e-3),
+            (None, None, None, None, None, None, None, None, None, None, None, 1e-4, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3, 1e-3),
+            (None, None, None, None, None, None, None, None, None, None, None, None, (0.3, 0.1), 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3, 1e-3),
+            (None, None, None, None, None, None, None, None, None, None, None, None, 0.1, 0.2, (2e-7, 1.1e-6, 5e-6), 1e-6, 0.5, 0.5, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3, 1e-3),
+            (None, None, None, None, None, None, None, None, None, None, None, None, 0.1, 0.2, 1e-6, (0.0, 1e-6, 4e-6), 0.5, 0.5, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3, 1e-3),
+            (None, None, None, None, None, None, None, None, None, None, None, None, 0.1, 0.2, 1e-6, 1e-6, 0.5, (0.5, 0.6, 0.9), 1e-4, 1e-4, 1e-3, 1e-3, 1e-3, 1e-3),
+            (None, None, None, None, None, None, None, None, None, None, None, None, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-4, 1e-3, (1e-3, 3e-2, 5e-2), 1e-3, 1e-3),
+            (None, None, None, None, None, None, None, None, None, None, None, 1e-4, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-4, 1e-3, 1e-3, 1e-3, (4e-4, 8e-4, 1e-1)),
+        ],
+    )
+    def test_fit_params(
+            self,
+            red_pot,
+            sec_red_pot,
+            d_r,
+            d_p,
+            alph,
+            sec_alph,
+            k,
+            sec_k,
+            kf1,
+            kb1,
+            kf2,
+            kb2,
+            fit_red_pot,
+            fit_sec_red_pot,
+            fit_d_r,
+            fit_d_p,
+            fit_alph,
+            fit_sec_alph,
+            fit_k,
+            fit_sec_k,
+            fit_kf1,
+            fit_kb1,
+            fit_kf2,
+            fit_kb2,
+    ):
+        with pytest.raises(ValueError):
+            v, i = FitSquareScheme(
+                voltage_to_fit=dummy_voltages5,
+                current_to_fit=dummy_currents5,
+                scan_rate=0.1,
+                c_bulk=1,
+                step_size=1,
+                disk_radius=1.5,
+                temperature=298,
+                reduction_potential=red_pot,
+                second_reduction_potential=sec_red_pot,
+                diffusion_reactant=d_r,
+                diffusion_product=d_p,
+                alpha=alph,
+                alpha_second_e=sec_alph,
+                k_0=k,
+                k_0_second_e=sec_k,
+                k_forward_first=kf1,
+                k_backward_first=kb1,
+                k_forward_second=kf2,
+                k_backward_second=kb2,
+            ).fit(
+                reduction_potential=fit_red_pot,
+                second_reduction_potential=fit_sec_red_pot,
+                diffusion_reactant=fit_d_r,
+                diffusion_product=fit_d_p,
+                alpha=fit_alph,
+                alpha_second_e=fit_sec_alph,
+                k_0=fit_k,
+                k_0_second_e=fit_sec_k,
+                k_forward_first=fit_kf1,
+                k_backward_first=fit_kb1,
+                k_forward_second=fit_kf2,
+                k_backward_second=fit_kb2,
+            )
+
+    @pytest.mark.parametrize(
+        "red_pot, "
+        "sec_red_pot, "
+        "d_r, "
+        "d_p, "
+        "alph, "
+        "sec_alph, "
+        "k, "
+        "sec_k, "
+        "kf1, "
+        "kb1, "
+        "kf2, "
+        "kb2, "
+        "fit_red_pot, "
+        "fit_sec_red_pot, "
+        "fit_d_r, "
+        "fit_d_p, "
+        "fit_alph, "
+        "fit_sec_alph, "
+        "fit_k, "
+        "fit_sec_k, "
+        "fit_kf1, "
+        "fit_kb1, "
+        "fit_kf2, "
+        "fit_kb2, ",
+        [
+            (0.05, 0.15, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 2e-3, 1e-1, 2e-1, None, None, None, None, None, None, None, None, None, None, None, None, 1e-3, 1e-3),
+            (0.05, 0.15, 1e-6, 1e-6, 0.5, None, 1e-3, 2e-3, 1e-1, 2e-1, None, None, None, None, None, None, None, (0.3, 0.6), None, None, None, None, 1e-3, 1e-3),
+        ],
+    )
+    def test_fitting(
+            self,
+            red_pot,
+            sec_red_pot,
+            d_r,
+            d_p,
+            alph,
+            sec_alph,
+            k,
+            sec_k,
+            kf1,
+            kb1,
+            kf2,
+            kb2,
+            fit_red_pot,
+            fit_sec_red_pot,
+            fit_d_r,
+            fit_d_p,
+            fit_alph,
+            fit_sec_alph,
+            fit_k,
+            fit_sec_k,
+            fit_kf1,
+            fit_kb1,
+            fit_kf2,
+            fit_kb2,
+    ):
+        v, i = FitSquareScheme(
+            voltage_to_fit=dummy_voltages5,
+            current_to_fit=dummy_currents5,
+            scan_rate=0.1,
+            c_bulk=1,
+            step_size=1,
+            disk_radius=1.5,
+            temperature=298,
+            reduction_potential=red_pot,
+            second_reduction_potential=sec_red_pot,
+            diffusion_reactant=d_r,
+            diffusion_product=d_p,
+            alpha=alph,
+            alpha_second_e=sec_alph,
+            k_0=k,
+            k_0_second_e=sec_k,
+            k_forward_first=kf1,
+            k_backward_first=kb1,
+            k_forward_second=kf2,
+            k_backward_second=kb2,
+        ).fit(
+            reduction_potential=fit_red_pot,
+            second_reduction_potential=fit_sec_red_pot,
+            diffusion_reactant=fit_d_r,
+            diffusion_product=fit_d_p,
+            alpha=fit_alph,
+            alpha_second_e=fit_sec_alph,
+            k_0=fit_k,
+            k_0_second_e=fit_sec_k,
+            k_forward_first=fit_kf1,
+            k_backward_first=fit_kb1,
+            k_forward_second=fit_kf2,
+            k_backward_second=fit_kb2,
+        )
+        assert v[0] == dummy_voltages5[0]
+
+
