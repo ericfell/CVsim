@@ -14,13 +14,13 @@ dummy_voltages2 = np.insert(dummy_voltages2, 0, -0.4)
 dummy_currents2 = np.insert(dummy_currents2, 0, 0.0)
 
 # adjust these later
-dummy_voltages2a, dummy_currents2a = E_qC(0.4, -0.6, 0.05, 0.1, 1, 1e-6, 2e-6, 0.5, 1e-4, 1e-3, 1e-4).simulate()
-dummy_voltages2a = np.insert(dummy_voltages2a, 0, 0.4)
-dummy_currents2a = np.insert(dummy_currents2a, 0, 0.0)
-
-dummy_voltages3, dummy_currents3 = EE(-0.6, 0.6, -0.05, 0.1, 0.1, 1, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-5, 1e-4).simulate()
-dummy_voltages3 = np.insert(dummy_voltages3, 0, -0.6)
+dummy_voltages3, dummy_currents3 = E_qC(0.4, -0.6, 0.05, 0.1, 1, 1e-6, 2e-6, 0.5, 1e-4, 1e-3, 1e-4).simulate()
+dummy_voltages3 = np.insert(dummy_voltages3, 0, 0.4)
 dummy_currents3 = np.insert(dummy_currents3, 0, 0.0)
+
+dummy_voltages4, dummy_currents4 = EE(-0.6, 0.6, -0.05, 0.1, 0.1, 1, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-5, 1e-4).simulate()
+dummy_voltages4 = np.insert(dummy_voltages4, 0, -0.6)
+dummy_currents4 = np.insert(dummy_currents4, 0, 0.0)
 
 
 class TestFitMechanism:
@@ -360,20 +360,20 @@ class TestFitE_qC:
         "k_forward, "
         "k_backward, ",
         [
-            (dummy_voltages2a, dummy_currents2a, -0.1, 1, 1, 1, 300, 0.1, 1e-6, 1e-6, 0.5, 1e-4, 1e-3, 1e-3),
-            (dummy_voltages2a, dummy_currents2a, 0.1, 0, 1, 1, 300, 0.1, 1e-6, 1e-6, 0.5, 1e-4, 1e-3, 1e-3),
-            (dummy_voltages2a, dummy_currents2a, 0.1, 1, -1, 1, 300, 0.1, 1e-6, 1e-6, 0.5, 1e-4, 1e-3, 1e-3),
-            (dummy_voltages2a, dummy_currents2a[:10], 0.1, 1, 1, 1, 300, 0.12, 1e-6, 1e-6, 0.5, 1e-4, 1e-3, 1e-3),
-            (dummy_voltages2a, dummy_currents2a, 0.1, 1, 1, 1, 0, 0.1, 1e-6, 1e-6, 0.5, 1e-4, 1e-3, 1e-3),
-            (dummy_voltages2a, dummy_currents2a, 0.1, 1, 1, -2, 300, 0.12, 2e-6, 2e-6, 0.5, 1e-4, 1e-3, 1e-3),
-            (dummy_voltages2a, dummy_currents2a, 0.1, 1, 1, 2, 300, 0.12, -2e-6, 2e-6, 0.5, 1e-4, 1e-3, 1e-3),
-            (dummy_voltages2a, dummy_currents2a, 0.1, 1, 1, 2, 300, 0.12, 2e-6, 0.0, 0.5, 1e-4, 1e-3, 1e-3),
-            (dummy_voltages2a, dummy_currents2a, 0.1, 1, 1, 2, 300, 0.12, 2e-6, 2e-6, 0.0, 1e-4, 1e-3, 1e-3),
-            (dummy_voltages2a, dummy_currents2a, 0.1, 1, 1, 2, 300, 0.12, 2e-6, 2e-6, 0.5, -1e-4, 1e-3, 1e-3),
-            (dummy_voltages2a, dummy_currents2a, 0.1, 1, 1, 2, 300, 0.12, 2e-6, 2e-6, 0.5, 0.0, 1e-3, 1e-3),
-            (dummy_voltages2a, dummy_currents2a, 0.1, 1, 1, 2, 300, 0.12, 2e-6, 2e-6, -0.5, 1e-4, 1e-3, 1e-3),
-            (dummy_voltages2a, dummy_currents2a, 0.1, 1, 1, 2, 300, 0.12, 2e-6, 2e-6, 0.5, 1e-4, 0.0, 1e-3),
-            (dummy_voltages2a, dummy_currents2a, 0.1, 1, 1, 2, 300, 0.12, 2e-6, 2e-6, 0.5, 1e-4, 1e-3, -1e-3),
+            (dummy_voltages3, dummy_currents3, -0.1, 1, 1, 1, 300, 0.1, 1e-6, 1e-6, 0.5, 1e-4, 1e-3, 1e-3),
+            (dummy_voltages3, dummy_currents3, 0.1, 0, 1, 1, 300, 0.1, 1e-6, 1e-6, 0.5, 1e-4, 1e-3, 1e-3),
+            (dummy_voltages3, dummy_currents3, 0.1, 1, -1, 1, 300, 0.1, 1e-6, 1e-6, 0.5, 1e-4, 1e-3, 1e-3),
+            (dummy_voltages3, dummy_currents3[:10], 0.1, 1, 1, 1, 300, 0.12, 1e-6, 1e-6, 0.5, 1e-4, 1e-3, 1e-3),
+            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, 1, 0, 0.1, 1e-6, 1e-6, 0.5, 1e-4, 1e-3, 1e-3),
+            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, -2, 300, 0.12, 2e-6, 2e-6, 0.5, 1e-4, 1e-3, 1e-3),
+            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, 2, 300, 0.12, -2e-6, 2e-6, 0.5, 1e-4, 1e-3, 1e-3),
+            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, 2, 300, 0.12, 2e-6, 0.0, 0.5, 1e-4, 1e-3, 1e-3),
+            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, 2, 300, 0.12, 2e-6, 2e-6, 0.0, 1e-4, 1e-3, 1e-3),
+            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, 2, 300, 0.12, 2e-6, 2e-6, 0.5, -1e-4, 1e-3, 1e-3),
+            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, 2, 300, 0.12, 2e-6, 2e-6, 0.5, 0.0, 1e-3, 1e-3),
+            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, 2, 300, 0.12, 2e-6, 2e-6, -0.5, 1e-4, 1e-3, 1e-3),
+            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, 2, 300, 0.12, 2e-6, 2e-6, 0.5, 1e-4, 0.0, 1e-3),
+            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, 2, 300, 0.12, 2e-6, 2e-6, 0.5, 1e-4, 1e-3, -1e-3),
         ],
     )
     def test_init(
@@ -523,8 +523,8 @@ class TestFitE_qC:
             fit_kb,
     ):
         v, i = FitE_qC(
-            voltage_to_fit=dummy_voltages2a,
-            current_to_fit=dummy_currents2a,
+            voltage_to_fit=dummy_voltages3,
+            current_to_fit=dummy_currents3,
             scan_rate=0.1,
             c_bulk=1,
             step_size=1,
@@ -546,7 +546,7 @@ class TestFitE_qC:
             k_forward=fit_kf,
             k_backward=fit_kb,
         )
-        assert v[0] == dummy_voltages2a[0]
+        assert v[0] == dummy_voltages3[0]
 
 class TestFitEE:
 
@@ -568,21 +568,21 @@ class TestFitEE:
         "k_0, "
         "k_0_second_e, ",
         [
-            (dummy_voltages3, dummy_currents3, -0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
-            (dummy_voltages3, dummy_currents3[4:], 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
-            (dummy_voltages3, dummy_currents3, 0.1, 0, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
-            (dummy_voltages3, dummy_currents3, 0.1, 1, -5, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
-            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, 0.0, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
-            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, 1, -12, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
-            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, 1, 300, 0.1, 0.2, -1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
-            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, -8e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
-            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.0, 0.5, 0.5, 1e-4, 1e-5),
-            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 1.2, 0.5, 1e-4, 1e-5),
-            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0, 0.5, 1e-4, 1e-5),
-            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, -10, 1e-4, 1e-5),
-            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 2, 1e-4, 1e-5),
-            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, -1e-4, 1e-5),
-            (dummy_voltages3, dummy_currents3, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 0.0),
+            (dummy_voltages4, dummy_currents4, -0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
+            (dummy_voltages4, dummy_currents4[4:], 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
+            (dummy_voltages4, dummy_currents4, 0.1, 0, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, -5, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 0.0, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, -12, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, -1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, -8e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.0, 0.5, 0.5, 1e-4, 1e-5),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 1.2, 0.5, 1e-4, 1e-5),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0, 0.5, 1e-4, 1e-5),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, -10, 1e-4, 1e-5),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 2, 1e-4, 1e-5),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, -1e-4, 1e-5),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 0.0),
         ],
     )
     def test_init(
@@ -687,8 +687,8 @@ class TestFitEE:
     ):
         with pytest.raises(ValueError):
             v, i = FitEE(
-                voltage_to_fit=dummy_voltages3,
-                current_to_fit=dummy_currents3,
+                voltage_to_fit=dummy_voltages4,
+                current_to_fit=dummy_currents4,
                 scan_rate=0.1,
                 c_bulk=1,
                 step_size=1,
@@ -766,8 +766,8 @@ class TestFitEE:
             fit_sec_k,
     ):
         v, i = FitEE(
-            voltage_to_fit=dummy_voltages3,
-            current_to_fit=dummy_currents3,
+            voltage_to_fit=dummy_voltages4,
+            current_to_fit=dummy_currents4,
             scan_rate=0.1,
             c_bulk=1,
             step_size=1,
@@ -793,4 +793,4 @@ class TestFitEE:
             k_0=fit_k,
             k_0_second_e=fit_sec_k,
         )
-        assert v[0] == dummy_voltages3[0]
+        assert v[0] == dummy_voltages4[0]

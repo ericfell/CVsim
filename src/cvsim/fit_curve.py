@@ -87,19 +87,19 @@ class FitMechanism(ABC):
         # rounding the start/reverse potentials from the input experimental voltage data to
         # 2 decimal places helps reduce noise and--based on authors' experience--it is pretty rare
         # to see start/reverse potentials initialized in the lab being declared to the third decimal place.
-        self.start_voltage = round(voltage_to_fit[0], 2)
-        start_voltage_mv = round(self.start_voltage * 1000)
+        self.start_potential = round(voltage_to_fit[0], 2)
+        start_voltage_mv = round(self.start_potential * 1000)
 
-        if voltage_to_fit[VOLTAGE_OSCILLATION_LIMIT] > self.start_voltage:
+        if voltage_to_fit[VOLTAGE_OSCILLATION_LIMIT] > self.start_potential:
             # scan starts towards more positive
-            self.reverse_voltage = round(max(voltage_to_fit), 2)
+            self.switch_potential = round(max(voltage_to_fit), 2)
         else:
             # scan starts towards more negative
-            self.reverse_voltage = round(min(voltage_to_fit), 2)
-        reverse_voltage_mv = round(self.reverse_voltage * 1000)
+            self.switch_potential = round(min(voltage_to_fit), 2)
+        reverse_voltage_mv = round(self.switch_potential * 1000)
 
         # make a cleaner x array
-        scan_direction = -1 if self.start_voltage < self.reverse_voltage else 1
+        scan_direction = -1 if self.start_potential < self.switch_potential else 1
         delta_theta = scan_direction * self.step_size
 
         thetas = [round((i - delta_theta)) for i in [start_voltage_mv, reverse_voltage_mv]]
@@ -121,8 +121,8 @@ class FitMechanism(ABC):
             'reduction_potential': [
                 round((self.voltage_to_fit[np.argmax(self.current_to_fit)]
                        + self.voltage_to_fit[np.argmin(self.current_to_fit)]) / 2, 3),
-                min(self.start_voltage, self.reverse_voltage),
-                max(self.start_voltage, self.reverse_voltage),
+                min(self.start_potential, self.switch_potential),
+                max(self.start_potential, self.switch_potential),
             ],
             'diffusion_reactant': [1e-6, 5e-8, 1e-4],
             'diffusion_product': [1e-6, 5e-8, 1e-4],
@@ -253,7 +253,7 @@ class FitMechanism(ABC):
 
         # Semi-analytical method does not compute the first point (i.e. time=0)
         # so the starting voltage data point with a zero current is reinserted
-        self.voltage_to_fit = np.insert(self.voltage_to_fit, 0, self.start_voltage)
+        self.voltage_to_fit = np.insert(self.voltage_to_fit, 0, self.start_potential)
         current_fit = np.insert(current_fit, 0, 0)
         return self.voltage_to_fit, current_fit
 
@@ -263,8 +263,8 @@ class FitE_rev(FitMechanism):
 
     def _scheme(self, get_var: Callable[[str], float]) -> CyclicVoltammetryScheme:
         return E_rev(
-                start_potential=self.start_voltage,
-                switch_potential=self.reverse_voltage,
+                start_potential=self.start_potential,
+                switch_potential=self.switch_potential,
                 reduction_potential=get_var('reduction_potential'),
                 scan_rate=self.scan_rate,
                 c_bulk=self.c_bulk,
@@ -401,8 +401,8 @@ class FitE_q(FitMechanism):
 
     def _scheme(self, get_var: Callable[[str], float]) -> CyclicVoltammetryScheme:
         return E_q(
-            start_potential=self.start_voltage,
-            switch_potential=self.reverse_voltage,
+            start_potential=self.start_potential,
+            switch_potential=self.switch_potential,
             reduction_potential=get_var('reduction_potential'),
             scan_rate=self.scan_rate,
             c_bulk=self.c_bulk,
@@ -466,8 +466,8 @@ class FitE_q(FitMechanism):
 
 class FitE_qC(FitMechanism):
     """
-    Scheme for fitting a CV for a quasi-reversible one electron transfer,
-    followed by a reversible first order homogeneous chemical transformation mechanism.
+    Scheme for fitting a CV for a quasi-reversible one electron transfer, followed by
+    a reversible first order homogeneous chemical transformation mechanism.
 
     Parameters
     ----------
@@ -567,8 +567,8 @@ class FitE_qC(FitMechanism):
 
     def _scheme(self, get_var: Callable[[str], float]) -> CyclicVoltammetryScheme:
         return E_qC(
-            start_potential=self.start_voltage,
-            switch_potential=self.reverse_voltage,
+            start_potential=self.start_potential,
+            switch_potential=self.switch_potential,
             reduction_potential=get_var('reduction_potential'),
             scan_rate=self.scan_rate,
             c_bulk=self.c_bulk,
@@ -603,7 +603,7 @@ class FitE_qC(FitMechanism):
         Parameters
         ----------
         reduction_potential : None | float | tuple[float, float] | tuple[float, float, float]
-            Optional guess for the reduction potential (V vs. reference).
+            Optional guess for the reduction potential of the one-electron transfer process (V vs. reference).
             Defaults to None.
         diffusion_reactant : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the diffusion coefficient of reactant (cm^2/s).
@@ -752,8 +752,8 @@ class FitEE(FitMechanism):
             'second_reduction_potential': [  # TODO need to think about this
                 round((self.voltage_to_fit[np.argmax(self.current_to_fit)]
                        + self.voltage_to_fit[np.argmin(self.current_to_fit)]) / 2, 3),
-                min(self.start_voltage, self.reverse_voltage),
-                max(self.start_voltage, self.reverse_voltage),
+                min(self.start_potential, self.switch_potential),
+                max(self.start_potential, self.switch_potential),
             ],
             'diffusion_intermediate': [1e-6, 5e-8, 1e-4],
             'alpha': [0.5, 0.01, 0.99],
@@ -764,8 +764,8 @@ class FitEE(FitMechanism):
 
     def _scheme(self, get_var: Callable[[str], float]) -> CyclicVoltammetryScheme:
         return EE(
-            start_potential=self.start_voltage,
-            switch_potential=self.reverse_voltage,
+            start_potential=self.start_potential,
+            switch_potential=self.switch_potential,
             reduction_potential=get_var('reduction_potential'),
             second_reduction_potential=get_var('second_reduction_potential'),
             scan_rate=self.scan_rate,
