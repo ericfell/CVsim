@@ -17,11 +17,9 @@ dummy_voltages3, dummy_currents3 = EE(-0.6, 0.6, -0.05, 0.1, 0.1, 1, 1e-6, 1e-6,
 dummy_voltages3 = np.insert(dummy_voltages3, 0, -0.6)
 dummy_currents3 = np.insert(dummy_currents3, 0, 0.0)
 
-
-
-dummy_voltages5, dummy_currents5 = SquareScheme(-0.5, 0.6, 0.05, 0.15, 0.1, 1, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 2e-3, 1e-1, 2e-1, 1e-3, 3e-3).simulate()
-dummy_voltages5 = np.insert(dummy_voltages5, 0, -0.5)
-dummy_currents5 = np.insert(dummy_currents5, 0, 0.0)
+dummy_voltages4, dummy_currents4 = SquareScheme(-0.5, 0.6, 0.05, 0.15, 0.1, 1, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 2e-3, 1e-1, 2e-1, 1e-3, 3e-3).simulate()
+dummy_voltages4 = np.insert(dummy_voltages4, 0, -0.5)
+dummy_currents4 = np.insert(dummy_currents4, 0, 0.0)
 
 class TestFitMechanism:
 
@@ -358,9 +356,9 @@ class TestFitEE:
         "diffusion_intermediate, "
         "diffusion_product, "
         "alpha, "
-        "alpha_second_e, "
+        "second_alpha, "
         "k_0, "
-        "k_0_second_e, ",
+        "second_k_0, ",
         [
             (dummy_voltages3, dummy_currents3, -0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
             (dummy_voltages3, dummy_currents3[4:], 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
@@ -394,9 +392,9 @@ class TestFitEE:
             diffusion_intermediate,
             diffusion_product,
             alpha,
-            alpha_second_e,
+            second_alpha,
             k_0,
-            k_0_second_e,
+            second_k_0,
     ):
         with pytest.raises(ValueError):
             FitEE(
@@ -413,9 +411,9 @@ class TestFitEE:
                 diffusion_intermediate=diffusion_intermediate,
                 diffusion_product=diffusion_product,
                 alpha=alpha,
-                alpha_second_e=alpha_second_e,
+                second_alpha=second_alpha,
                 k_0=k_0,
-                k_0_second_e=k_0_second_e,
+                second_k_0=second_k_0,
             )
 
     @pytest.mark.parametrize(
@@ -494,9 +492,9 @@ class TestFitEE:
                 diffusion_intermediate=d_i,
                 diffusion_product=d_p,
                 alpha=alph,
-                alpha_second_e=sec_alph,
+                second_alpha=sec_alph,
                 k_0=k,
-                k_0_second_e=sec_k,
+                second_k_0=sec_k,
             ).fit(
                 reduction_potential=fit_red_pot,
                 second_reduction_potential=fit_sec_red_pot,
@@ -504,9 +502,9 @@ class TestFitEE:
                 diffusion_intermediate=fit_d_i,
                 diffusion_product=fit_d_p,
                 alpha=fit_alph,
-                alpha_second_e=fit_sec_alph,
+                second_alpha=fit_sec_alph,
                 k_0=fit_k,
-                k_0_second_e=fit_sec_k,
+                second_k_0=fit_sec_k,
             )
 
     @pytest.mark.parametrize(
@@ -573,9 +571,9 @@ class TestFitEE:
             diffusion_intermediate=d_i,
             diffusion_product=d_p,
             alpha=alph,
-            alpha_second_e=sec_alph,
+            second_alpha=sec_alph,
             k_0=k,
-            k_0_second_e=sec_k,
+            second_k_0=sec_k,
         ).fit(
             reduction_potential=fit_red_pot,
             second_reduction_potential=fit_sec_red_pot,
@@ -583,9 +581,9 @@ class TestFitEE:
             diffusion_intermediate=fit_d_i,
             diffusion_product=fit_d_p,
             alpha=fit_alph,
-            alpha_second_e=fit_sec_alph,
+            second_alpha=fit_sec_alph,
             k_0=fit_k,
-            k_0_second_e=fit_sec_k,
+            second_k_0=fit_sec_k,
         )
         assert v[0] == dummy_voltages3[0]
 
@@ -604,34 +602,34 @@ class TestFitSquareScheme:
         "diffusion_reactant, "
         "diffusion_product, "
         "alpha, "
-        "alpha_second_e, "
+        "second_alpha, "
         "k_0, "
-        "k_0_second_e, "
-        "k_forward_first, "
-        "k_backward_first, "
-        "k_forward_second, "
-        "k_backward_second, ",
+        "second_k_0, "
+        "k_forward, "
+        "k_backward, "
+        "second_k_forward, "
+        "second_k_backward, ",
         [
-            (dummy_voltages5, dummy_currents5, -0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
-            (dummy_voltages5, dummy_currents5[4:], 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
-            (dummy_voltages5, dummy_currents5, 0.1, 0, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
-            (dummy_voltages5, dummy_currents5, 0.1, 1, -5, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
-            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 0.0, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
-            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, -12, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
-            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, -1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
-            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, -8e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
-            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 0.0, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
-            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1.2, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
-            (dummy_voltages5, dummy_currents, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
-            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, -10, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
-            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 2, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
-            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, -1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
-            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 0.0, 1e-3, 1e-3, 1e-3, 1e-3),
-            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, -1e-3, 1e-3, 1e-3, 1e-3),
-            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, -1e-3, 1e-3, 1e-3),
-            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, -1e-3, 1e-3),
-            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, -1e-3),
-            (dummy_voltages5, dummy_currents5, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 0.0),
+            (dummy_voltages4, dummy_currents4, -0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages4, dummy_currents4[4:], 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages4, dummy_currents4, 0.1, 0, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, -5, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 0.0, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, -12, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, -1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, -8e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 0.0, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1.2, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages4, dummy_currents, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, -10, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 2, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, -1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 0.0, 1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, -1e-3, 1e-3, 1e-3, 1e-3),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, -1e-3, 1e-3, 1e-3),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, -1e-3, 1e-3),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, -1e-3),
+            (dummy_voltages4, dummy_currents4, 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 0.0),
         ],
     )
     def test_init(
@@ -648,13 +646,13 @@ class TestFitSquareScheme:
             diffusion_reactant,
             diffusion_product,
             alpha,
-            alpha_second_e,
+            second_alpha,
             k_0,
-            k_0_second_e,
-            k_forward_first,
-            k_backward_first,
-            k_forward_second,
-            k_backward_second,
+            second_k_0,
+            k_forward,
+            k_backward,
+            second_k_forward,
+            second_k_backward,
     ):
         with pytest.raises(ValueError):
             FitSquareScheme(
@@ -670,13 +668,13 @@ class TestFitSquareScheme:
                 diffusion_reactant=diffusion_reactant,
                 diffusion_product=diffusion_product,
                 alpha=alpha,
-                alpha_second_e=alpha_second_e,
+                second_alpha=second_alpha,
                 k_0=k_0,
-                k_0_second_e=k_0_second_e,
-                k_forward_first=k_forward_first,
-                k_backward_first=k_backward_first,
-                k_forward_second=k_forward_second,
-                k_backward_second=k_backward_second,
+                second_k_0=second_k_0,
+                k_forward=k_forward,
+                k_backward=k_backward,
+                second_k_forward=second_k_forward,
+                second_k_backward=second_k_backward,
             )
 
     @pytest.mark.parametrize(
@@ -754,8 +752,8 @@ class TestFitSquareScheme:
     ):
         with pytest.raises(ValueError):
             v, i = FitSquareScheme(
-                voltage_to_fit=dummy_voltages5,
-                current_to_fit=dummy_currents5,
+                voltage_to_fit=dummy_voltages4,
+                current_to_fit=dummy_currents4,
                 scan_rate=0.1,
                 c_bulk=1,
                 step_size=1,
@@ -766,26 +764,26 @@ class TestFitSquareScheme:
                 diffusion_reactant=d_r,
                 diffusion_product=d_p,
                 alpha=alph,
-                alpha_second_e=sec_alph,
+                second_alpha=sec_alph,
                 k_0=k,
-                k_0_second_e=sec_k,
-                k_forward_first=kf1,
-                k_backward_first=kb1,
-                k_forward_second=kf2,
-                k_backward_second=kb2,
+                second_k_0=sec_k,
+                k_forward=kf1,
+                k_backward=kb1,
+                second_k_forward=kf2,
+                second_k_backward=kb2,
             ).fit(
                 reduction_potential=fit_red_pot,
                 second_reduction_potential=fit_sec_red_pot,
                 diffusion_reactant=fit_d_r,
                 diffusion_product=fit_d_p,
                 alpha=fit_alph,
-                alpha_second_e=fit_sec_alph,
+                second_alpha=fit_sec_alph,
                 k_0=fit_k,
-                k_0_second_e=fit_sec_k,
-                k_forward_first=fit_kf1,
-                k_backward_first=fit_kb1,
-                k_forward_second=fit_kf2,
-                k_backward_second=fit_kb2,
+                second_k_0=fit_sec_k,
+                k_forward=fit_kf1,
+                k_backward=fit_kb1,
+                second_k_forward=fit_kf2,
+                second_k_backward=fit_kb2,
             )
 
     @pytest.mark.parametrize(
@@ -846,8 +844,8 @@ class TestFitSquareScheme:
             fit_kb2,
     ):
         v, i = FitSquareScheme(
-            voltage_to_fit=dummy_voltages5,
-            current_to_fit=dummy_currents5,
+            voltage_to_fit=dummy_voltages4,
+            current_to_fit=dummy_currents4,
             scan_rate=0.1,
             c_bulk=1,
             step_size=1,
@@ -858,27 +856,27 @@ class TestFitSquareScheme:
             diffusion_reactant=d_r,
             diffusion_product=d_p,
             alpha=alph,
-            alpha_second_e=sec_alph,
+            second_alpha=sec_alph,
             k_0=k,
-            k_0_second_e=sec_k,
-            k_forward_first=kf1,
-            k_backward_first=kb1,
-            k_forward_second=kf2,
-            k_backward_second=kb2,
+            second_k_0=sec_k,
+            k_forward=kf1,
+            k_backward=kb1,
+            second_k_forward=kf2,
+            second_k_backward=kb2,
         ).fit(
             reduction_potential=fit_red_pot,
             second_reduction_potential=fit_sec_red_pot,
             diffusion_reactant=fit_d_r,
             diffusion_product=fit_d_p,
             alpha=fit_alph,
-            alpha_second_e=fit_sec_alph,
+            second_alpha=fit_sec_alph,
             k_0=fit_k,
-            k_0_second_e=fit_sec_k,
-            k_forward_first=fit_kf1,
-            k_backward_first=fit_kb1,
-            k_forward_second=fit_kf2,
-            k_backward_second=fit_kb2,
+            second_k_0=fit_sec_k,
+            k_forward=fit_kf1,
+            k_backward=fit_kb1,
+            second_k_forward=fit_kf2,
+            second_k_backward=fit_kb2,
         )
-        assert v[0] == dummy_voltages5[0]
+        assert v[0] == dummy_voltages4[0]
 
 
