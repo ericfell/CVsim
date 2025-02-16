@@ -88,6 +88,7 @@ class FitMechanism(ABC):
         # 2 decimal places helps reduce noise and--based on authors' experience--it is pretty rare
         # to see start/reverse potentials initialized in the lab being declared to the third decimal place.
         self.start_potential = round(voltage_to_fit[0], 2)
+
         start_potential_mv = round(self.start_potential * 1000)
 
         if voltage_to_fit[VOLTAGE_OSCILLATION_LIMIT] > self.start_potential:
@@ -96,6 +97,7 @@ class FitMechanism(ABC):
         else:
             # scan starts towards more negative
             self.switch_potential = round(min(voltage_to_fit), 2)
+
         switch_potential_mv = round(self.switch_potential * 1000)
 
         # make a cleaner x array
@@ -463,6 +465,184 @@ class FitE_q(FitMechanism):
             'k_0': k_0,
         })
 
+
+class FitE_qC(FitMechanism):
+    """
+    Scheme for fitting a CV for a quasi-reversible one electron transfer, followed by
+    a reversible first order homogeneous chemical transformation mechanism.
+
+    Parameters
+    ----------
+    voltage_to_fit : list[float] | np.ndarray
+        Array of voltage data of the CV to fit.
+    current_to_fit : list[float] | np.ndarray
+        Array of current data of the CV to fit.
+    scan_rate : float
+        Potential sweep rate (V/s).
+    c_bulk : float
+        Bulk concentration of redox species (mM or mol/m^3).
+    step_size : float
+        Voltage increment during CV scan (mV).
+    disk_radius : float
+        Radius of disk macro-electrode (mm).
+    temperature : float
+        Temperature (K).
+        Default is 298.0 K (24.85C).
+    reduction_potential : float | None
+        Reduction potential of the one-electron transfer process (V vs. reference).
+        If known, can be fixed value, otherwise defaults to None.
+    diffusion_reactant : float | None
+        Diffusion coefficient of reactant (cm^2/s).
+        If known, can be fixed value, otherwise defaults to None.
+    diffusion_product : float | None
+        Diffusion coefficient of product (cm^2/s).
+        If known, can be fixed value, otherwise defaults to None.
+    alpha : float | None
+        Charge transfer coefficient (no units).
+        If known, can be fixed value, otherwise defaults to None.
+    k_0 : float | None
+        Standard electrochemical rate constant (cm/s).
+        If known, can be fixed value, otherwise defaults to None.
+    k_forward : float | None
+        First order forward chemical rate constant (1/s).
+        If known, can be fixed value, otherwise defaults to None.
+    k_backward : float | None
+        First order backward chemical rate constant (1/s).
+        If known, can be fixed value, otherwise defaults to None.
+
+    """
+
+    def __init__(
+            self,
+            voltage_to_fit: list[float] | np.ndarray,
+            current_to_fit: list[float] | np.ndarray,
+            scan_rate: float,
+            c_bulk: float,
+            step_size: float,
+            disk_radius: float,
+            temperature: float = 298.0,
+            reduction_potential: float | None = None,
+            diffusion_reactant: float | None = None,
+            diffusion_product: float | None = None,
+            alpha: float | None = None,
+            k_0: float | None = None,
+            k_forward: float | None = None,
+            k_backward: float | None = None,
+    ) -> None:
+        super().__init__(
+            voltage_to_fit,
+            current_to_fit,
+            scan_rate,
+            c_bulk,
+            step_size,
+            disk_radius,
+            temperature,
+            reduction_potential,
+            diffusion_reactant,
+            diffusion_product,
+        )
+
+        self._ensure_open_unit_interval_or_none('alpha', alpha)
+        self._ensure_positive_or_none('k_0', k_0)
+        self._ensure_positive_or_none('k_forward', k_forward)
+        self._ensure_positive_or_none('k_backward', k_backward)
+
+        self.alpha = alpha
+        self.k_0 = k_0
+        self.k_forward = k_forward
+        self.k_backward = k_backward
+
+        self.fixed_vars |= {
+            'alpha': alpha,
+            'k_0': k_0,
+            'k_forward': k_forward,
+            'k_backward': k_backward,
+        }
+
+        # default [initial guess, lower bound, upper bound]
+        self.default_vars |= {
+            'alpha': [0.5, 0.01, 0.99],
+            'k_0': [1e-5, 1e-8, 1e-3],
+            'k_forward': [1e-3, 1e-8, 1e3],
+            'k_backward': [1e-3, 1e-8, 1e3],
+        }
+
+    def _scheme(self, get_var: Callable[[str], float]) -> CyclicVoltammetryScheme:
+        return E_qC(
+            start_potential=self.start_potential,
+            switch_potential=self.switch_potential,
+            reduction_potential=get_var('reduction_potential'),
+            scan_rate=self.scan_rate,
+            c_bulk=self.c_bulk,
+            diffusion_reactant=get_var('diffusion_reactant'),
+            diffusion_product=get_var('diffusion_product'),
+            alpha=get_var('alpha'),
+            k_0=get_var('k_0'),
+            k_forward=get_var('k_forward'),
+            k_backward=get_var('k_backward'),
+            step_size=self.step_size,
+            disk_radius=self.disk_radius,
+            temperature=self.temperature,
+        )
+
+    def fit(
+            self,
+            reduction_potential: _ParamGuess = None,
+            diffusion_reactant: _ParamGuess = None,
+            diffusion_product: _ParamGuess = None,
+            alpha: _ParamGuess = None,
+            k_0: _ParamGuess = None,
+            k_forward: _ParamGuess = None,
+            k_backward: _ParamGuess = None,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """
+        Fits the CV for a quasi-reversible one electron transfer, followed by a reversible first
+        order homogeneous chemical transformation mechanism.
+        If a parameter is given, it must be a: float for initial guess of parameter; tuple[float, float] for
+        (lower bound, upper bound) of the initial guess; or tuple[float, float, float] for
+        (initial guess, lower bound, upper bound).
+
+        Parameters
+        ----------
+        reduction_potential : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the reduction potential of the one-electron transfer process (V vs. reference).
+            Defaults to None.
+        diffusion_reactant : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the diffusion coefficient of reactant (cm^2/s).
+            Defaults to None.
+        diffusion_product : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the diffusion coefficient of product (cm^2/s).
+            Defaults to None.
+        alpha : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the charge transfer coefficient (no units).
+            Defaults to None.
+        k_0 : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the standard electrochemical rate constant (cm/s).
+            Defaults to None.
+        k_forward : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the first order forward chemical rate constant (1/s).
+            Defaults to None.
+        k_backward : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the first order backward chemical rate constant (1/s).
+            Defaults to None.
+
+        Returns
+        -------
+        voltage_to_fit : np.ndarray
+            Array of potential (V) values of the CV fit.
+        current_fit : np.ndarray
+            Array of current (A) values of the CV fit.
+
+        """
+        return self._fit({
+            'reduction_potential': reduction_potential,
+            'diffusion_reactant': diffusion_reactant,
+            'diffusion_product': diffusion_product,
+            'alpha': alpha,
+            'k_0': k_0,
+            'k_forward': k_forward,
+            'k_backward': k_backward,
+        })
 
 class FitEE(FitMechanism):
     """
