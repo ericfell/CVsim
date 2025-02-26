@@ -1,6 +1,2 @@
 # Regular dependencies
 scipy
-
-# DEV
-sphinx-rtd-theme==3.0.2
-nbsphinx
