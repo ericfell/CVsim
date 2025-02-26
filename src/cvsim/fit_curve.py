@@ -150,7 +150,7 @@ class FitMechanism(ABC):
         return {k: v for k, v in mapping.items() if v is not None}
 
     @staticmethod
-    def _fit_var_checker(fit_vars: dict, fit_default_vars: dict) -> dict:  # TODO rename
+    def _fit_var_checker(fit_vars: dict, fit_default_vars: dict) -> dict:
         # take fit_vars dict, for each in it, replace the initial guess/bounds if specified
         for param, value in fit_vars.items():
             if isinstance(value, float | int):
@@ -199,10 +199,10 @@ class FitMechanism(ABC):
         for param, (initial, lower, upper) in fit_default_vars.items():
             if not lower < initial < upper:
                 # check if default initial guess is outside bounds, set guess to avg of bounds
-                # TODO not useful if spans many order of magnitudes, use logarithmic mean?
+                # not useful if spans many order of magnitudes, use logarithmic mean? possible todo
                 fit_default_vars[param] = [(lower + upper) / 2, lower, upper]
                 # check if user's guess was outside bounds
-                if initial != self.default_vars[param][0]:  # TODO is this redundant?
+                if initial != self.default_vars[param][0]:
                     raise ValueError(f"Initial guess for '{param}' is outside user-defined bounds")
 
         print(f"final fitting vars: {fit_default_vars}")
@@ -234,15 +234,12 @@ class FitMechanism(ABC):
             return i_fit
 
         # fit raw data but exclude first data point, as semi-analytical method skips time=0
-        # TODO need normalization of the current?
         fit_results = curve_fit(
             f=fit_function,
             xdata=self.voltage_to_fit,
             ydata=self.current_to_fit[1:],
-            #ydata=(self.current_to_fit[1:] / max(abs(self.current_to_fit[1:]))), # normalized
             p0=initial_guesses,
             bounds=[lower_bounds, upper_bounds],
-            #x_scale=[1,1e5],
         )
         # TODO: return the optimal parameters, transform popt from an array into a dict keyed by fitting param name?
         popt, pcov = list(fit_results)
