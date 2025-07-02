@@ -1,4 +1,4 @@
-[![codecov](https://codecov.io/gh/ericfell/CVsim/graph/badge.svg?token=90223DIBVS)](https://codecov.io/gh/ericfell/CVsim)
+[![Documentation Status](https://readthedocs.org/projects/cvsim/badge/?version=latest)](https://cvsim.readthedocs.io/en/latest/?badge=latest) [![codecov](https://codecov.io/gh/ericfell/CVsim/graph/badge.svg?token=90223DIBVS)](https://codecov.io/gh/ericfell/CVsim)  [![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)  [![linting: pylint](https://img.shields.io/badge/linting-pylint-yellowgreen)](https://github.com/pylint-dev/pylint)
 
 CVsim
 --------
