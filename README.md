@@ -43,7 +43,7 @@ To simulate a reversible (Nernstian) CV:
 from cvsim.mechanisms import E_rev
 
 potential, current = E_rev(
-    starting_potential=0.3,    # V vs. reference
+    start_potential=0.3,       # V vs. reference
     switch_potential=-0.5,     # V vs. reference
     reduction_potential=-0.1,  # V vs. reference
     scan_rate=0.1,             # V/s
