@@ -686,7 +686,7 @@ class FitEE(FitMechanism):
     k_0 : float | None
         Standard electrochemical rate constant of first redox process (cm/s).
         If known, can be fixed value, otherwise defaults to None.
-    second_k_0 : float | None
+    k0_2 : float | None
         Standard electrochemical rate constant of second redox process (cm/s).
         If known, can be fixed value, otherwise defaults to None.
 
@@ -709,7 +709,7 @@ class FitEE(FitMechanism):
             alpha: float | None = None,
             alpha2: float | None = None,
             k_0: float | None = None,
-            second_k_0: float | None = None,
+            k0_2: float | None = None,
     ) -> None:
         super().__init__(
             voltage_to_fit,
@@ -728,14 +728,14 @@ class FitEE(FitMechanism):
         self._ensure_open_unit_interval_or_none('alpha', alpha)
         self._ensure_open_unit_interval_or_none('alpha2', alpha2)
         self._ensure_positive_or_none('k_0', k_0)
-        self._ensure_positive_or_none('second_k_0', second_k_0)
+        self._ensure_positive_or_none('k0_2', k0_2)
 
         self.reduction_potential2 = reduction_potential2
         self.diffusion_intermediate = diffusion_intermediate
         self.alpha = alpha
         self.alpha2 = alpha2
         self.k_0 = k_0
-        self.second_k_0 = second_k_0
+        self.k0_2 = k0_2
 
         self.fixed_vars |= {
             'reduction_potential2': reduction_potential2,
@@ -743,7 +743,7 @@ class FitEE(FitMechanism):
             'alpha': alpha,
             'alpha2': alpha2,
             'k_0': k_0,
-            'second_k_0': second_k_0,
+            'k0_2': k0_2,
         }
 
         # default [initial guess, lower bound, upper bound]
@@ -758,7 +758,7 @@ class FitEE(FitMechanism):
             'alpha': [0.5, 0.01, 0.99],
             'alpha2': [0.5, 0.01, 0.99],
             'k_0': [1e-5, 1e-8, 1e-3],
-            'second_k_0': [1e-5, 1e-8, 1e-3],
+            'k0_2': [1e-5, 1e-8, 1e-3],
         }
 
     def _scheme(self, get_var: Callable[[str], float]) -> CyclicVoltammetryScheme:
@@ -775,7 +775,7 @@ class FitEE(FitMechanism):
             alpha=get_var('alpha'),
             alpha2=get_var('alpha2'),
             k_0=get_var('k_0'),
-            second_k_0=get_var('second_k_0'),
+            k0_2=get_var('k0_2'),
             step_size=self.step_size,
             disk_radius=self.disk_radius,
             temperature=self.temperature,
@@ -791,7 +791,7 @@ class FitEE(FitMechanism):
             alpha: _ParamGuess = None,
             alpha2: _ParamGuess = None,
             k_0: _ParamGuess = None,
-            second_k_0: _ParamGuess = None,
+            k0_2: _ParamGuess = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         """
         Fits the CV for a two successive one-electron quasi-reversible transfer mechanism.
@@ -825,7 +825,7 @@ class FitEE(FitMechanism):
         k_0 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the standard electrochemical rate constant of the first redox process (cm/s).
             Defaults to None.
-        second_k_0 : None | float | tuple[float, float] | tuple[float, float, float]
+        k0_2 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the standard electrochemical rate constant of the second redox process (cm/s).
             Defaults to None.
 
@@ -847,7 +847,7 @@ class FitEE(FitMechanism):
             'alpha': alpha,
             'alpha2': alpha2,
             'k_0': k_0,
-            'second_k_0': second_k_0,
+            'k0_2': k0_2,
         })
 
 
@@ -894,7 +894,7 @@ class FitSquareScheme(FitMechanism):
     k_0 : float | None
         Standard electrochemical rate constant of first redox process (cm/s).
         If known, can be fixed value, otherwise defaults to None.
-    second_k_0 : float | None
+    k0_2 : float | None
         Standard electrochemical rate constant of second redox process (cm/s).
         If known, can be fixed value, otherwise defaults to None.
     k_forward : float | None
@@ -928,7 +928,7 @@ class FitSquareScheme(FitMechanism):
             alpha: float | None = None,
             alpha2: float | None = None,
             k_0: float | None = None,
-            second_k_0: float | None = None,
+            k0_2: float | None = None,
             k_forward: float | None = None,
             k_backward: float | None = None,
             second_k_forward: float | None = None,
@@ -950,7 +950,7 @@ class FitSquareScheme(FitMechanism):
         self._ensure_open_unit_interval_or_none('alpha', alpha)
         self._ensure_open_unit_interval_or_none('alpha2', alpha2)
         self._ensure_positive_or_none('k_0', k_0)
-        self._ensure_positive_or_none('second_k_0', second_k_0)
+        self._ensure_positive_or_none('k0_2', k0_2)
         self._ensure_positive_or_none('k_forward', k_forward)
         self._ensure_positive_or_none('k_backward', k_backward)
         self._ensure_positive_or_none('second_k_forward', second_k_forward)
@@ -960,7 +960,7 @@ class FitSquareScheme(FitMechanism):
         self.alpha = alpha
         self.alpha2 = alpha2
         self.k_0 = k_0
-        self.second_k_0 = second_k_0
+        self.k0_2 = k0_2
         self.k_forward = k_forward
         self.k_backward = k_backward
         self.second_k_forward = second_k_forward
@@ -971,7 +971,7 @@ class FitSquareScheme(FitMechanism):
             'alpha': alpha,
             'alpha2': alpha2,
             'k_0': k_0,
-            'second_k_0': second_k_0,
+            'k0_2': k0_2,
             'k_forward': k_forward,
             'k_backward': k_backward,
             'second_k_forward': second_k_forward,
@@ -989,7 +989,7 @@ class FitSquareScheme(FitMechanism):
             'alpha': [0.5, 0.01, 0.99],
             'alpha2': [0.5, 0.01, 0.99],
             'k_0': [1e-5, 1e-8, 1e-3],
-            'second_k_0': [1e-5, 1e-8, 1e-3],
+            'k0_2': [1e-5, 1e-8, 1e-3],
             'k_forward': [1e-1, 5e-4, 1e3],  # TODO bounds might be too restrictive
             'k_backward': [1e-1, 5e-4, 1e3],
             'second_k_forward': [1e-1, 5e-4, 1e3],
@@ -1009,7 +1009,7 @@ class FitSquareScheme(FitMechanism):
             alpha=get_var('alpha'),
             alpha2=get_var('alpha2'),
             k_0=get_var('k_0'),
-            second_k_0=get_var('second_k_0'),
+            k0_2=get_var('k0_2'),
             k_forward=get_var('k_forward'),
             k_backward=get_var('k_backward'),
             second_k_forward=get_var('second_k_forward'),
@@ -1028,7 +1028,7 @@ class FitSquareScheme(FitMechanism):
             alpha: _ParamGuess = None,
             alpha2: _ParamGuess = None,
             k_0: _ParamGuess = None,
-            second_k_0: _ParamGuess = None,
+            k0_2: _ParamGuess = None,
             k_forward: _ParamGuess = None,
             k_backward: _ParamGuess = None,
             second_k_forward: _ParamGuess = None,
@@ -1063,7 +1063,7 @@ class FitSquareScheme(FitMechanism):
         k_0 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the standard electrochemical rate constant of the first redox process (cm/s).
             Defaults to None.
-        second_k_0 : None | float | tuple[float, float] | tuple[float, float, float]
+        k0_2 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the standard electrochemical rate constant of the second redox process (cm/s).
             Defaults to None.
         k_forward : None | float | tuple[float, float] | tuple[float, float, float]
@@ -1096,7 +1096,7 @@ class FitSquareScheme(FitMechanism):
             'alpha': alpha,
             'alpha2': alpha2,
             'k_0': k_0,
-            'second_k_0': second_k_0,
+            'k0_2': k0_2,
             'k_forward': k_forward,
             'k_backward': k_backward,
             'second_k_forward': second_k_forward,

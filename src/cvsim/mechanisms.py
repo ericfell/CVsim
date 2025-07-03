@@ -465,7 +465,7 @@ class EE(CyclicVoltammetryScheme):
         Charge transfer coefficient of second redox process (no units).
     k_0 : float
         Standard electrochemical rate constant (cm/s).
-    second_k_0 : float
+    k0_2 : float
         Standard electrochemical rate constant of second redox process (cm/s).
     step_size : float
         Voltage increment during CV scan (mV).
@@ -493,7 +493,7 @@ class EE(CyclicVoltammetryScheme):
             alpha: float,
             alpha2: float,
             k_0: float,
-            second_k_0: float,
+            k0_2: float,
             step_size: float = 1.0,
             disk_radius: float = 1.5,
             temperature: float = 298.0,
@@ -514,14 +514,14 @@ class EE(CyclicVoltammetryScheme):
         self._ensure_open_unit_interval('alpha2', alpha2)
         self._ensure_positive('diffusion_intermediate', diffusion_intermediate)
         self._ensure_positive('k_0', k_0)
-        self._ensure_positive('second_k_0', second_k_0)
+        self._ensure_positive('k0_2', k0_2)
 
         self.reduction_potential2 = reduction_potential2
         self.diffusion_intermediate = diffusion_intermediate / 1e4  # cm^2/s to m^2/s
         self.alpha = alpha
         self.alpha2 = alpha2
         self.k_0 = k_0 / 100  # cm/s to m/s
-        self.second_k_0 = second_k_0 / 100  # cm/s to m/s
+        self.k0_2 = k0_2 / 100  # cm/s to m/s
 
     def simulate(self) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -548,7 +548,7 @@ class EE(CyclicVoltammetryScheme):
         y_function = 1 + (xi_function1 * np.sqrt(self.diffusion_intermediate / self.diffusion_reactant))
 
         # Equation (12:17) from [1]
-        w_function = (intermediate_const / self.second_k_0) / (xi_function2 ** self.alpha2)
+        w_function = (intermediate_const / self.k0_2) / (xi_function2 ** self.alpha2)
 
         # Equation (12:18) from [1]
         v_function = 1 + (np.sqrt(self.diffusion_intermediate / self.diffusion_product) / xi_function2)
@@ -607,7 +607,7 @@ class SquareScheme(CyclicVoltammetryScheme):
         Charge transfer coefficient of second redox process (no units).
     k_0 : float
         Standard electrochemical rate constant (cm/s).
-    second_k_0 : float
+    k0_2 : float
         Standard electrochemical rate constant of second redox process (cm/s).
     k_forward : float
         First order forward chemical rate constant for first redox species (1/s).
@@ -642,7 +642,7 @@ class SquareScheme(CyclicVoltammetryScheme):
             alpha: float,
             alpha2: float,
             k_0: float,
-            second_k_0: float,
+            k0_2: float,
             k_forward: float,
             k_backward: float,
             second_k_forward: float,
@@ -666,7 +666,7 @@ class SquareScheme(CyclicVoltammetryScheme):
         self._ensure_open_unit_interval('alpha', alpha)
         self._ensure_open_unit_interval('alpha2', alpha2)
         self._ensure_positive('k_0', k_0)
-        self._ensure_positive('second_k_0', second_k_0)
+        self._ensure_positive('k0_2', k0_2)
         self._ensure_positive('k_backward', k_backward)
         self._ensure_positive('second_k_backward', second_k_backward)
         self._ensure_nonnegative('k_forward', k_forward)
@@ -676,7 +676,7 @@ class SquareScheme(CyclicVoltammetryScheme):
         self.alpha = alpha
         self.alpha2 = alpha2
         self.k_0 = k_0 / 100  # cm/s to m/s
-        self.second_k_0 = second_k_0 / 100  # cm/s to m/s
+        self.k0_2 = k0_2 / 100  # cm/s to m/s
         self.k_forward = k_forward
         self.k_backward = k_backward
         self.second_k_forward = second_k_forward
@@ -728,7 +728,7 @@ class SquareScheme(CyclicVoltammetryScheme):
                             - (((big_k2 * sum_sums) - (big_k2 * sum1_exp2) + sum2_exp2)
                                / ((xi_function2[n] * (1 + big_k2)) / self.diffusion_ratio)))
                            / ((self.velocity_constant / (np.power(xi_function2[n], self.alpha2)
-                                                         * self.second_k_0))
+                                                         * self.k0_2))
                               + (self.diffusion_ratio / xi_function2[n]) + 1))
 
         current = current1 + current2

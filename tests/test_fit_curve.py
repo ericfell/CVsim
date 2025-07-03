@@ -569,7 +569,7 @@ class TestFitEE:
         "alpha, "
         "alpha2, "
         "k_0, "
-        "second_k_0, ",
+        "k0_2, ",
         [
             (dummy_voltages4, dummy_currents4, -0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
             (dummy_voltages4, dummy_currents4[4:], 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
@@ -605,7 +605,7 @@ class TestFitEE:
             alpha,
             alpha2,
             k_0,
-            second_k_0,
+            k0_2,
     ):
         with pytest.raises(ValueError):
             FitEE(
@@ -624,7 +624,7 @@ class TestFitEE:
                 alpha=alpha,
                 alpha2=alpha2,
                 k_0=k_0,
-                second_k_0=second_k_0,
+                k0_2=k0_2,
             )
 
     @pytest.mark.parametrize(
@@ -636,7 +636,7 @@ class TestFitEE:
         "alph, "
         "alph2, "
         "k, "
-        "sec_k, "
+        "k2, "
         "fit_red_pot, "
         "fit_red_pot2, "
         "fit_d_r, "
@@ -645,7 +645,7 @@ class TestFitEE:
         "fit_alph, "
         "fit_alph2, "
         "fit_k, "
-        "fit_sec_k, ",
+        "fit_k2, ",
         [
             (0.3, None, None, None, None, None, None, None, None, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-4),
             (None, 0.0, None, None, None, None, None, None, None, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-4),
@@ -677,7 +677,7 @@ class TestFitEE:
             alph,
             alph2,
             k,
-            sec_k,
+            k2,
             fit_red_pot,
             fit_red_pot2,
             fit_d_r,
@@ -686,7 +686,7 @@ class TestFitEE:
             fit_alph,
             fit_alph2,
             fit_k,
-            fit_sec_k,
+            fit_k2,
     ):
         with pytest.raises(ValueError):
             v, i = FitEE(
@@ -705,7 +705,7 @@ class TestFitEE:
                 alpha=alph,
                 alpha2=alph2,
                 k_0=k,
-                second_k_0=sec_k,
+                k0_2=k2,
             ).fit(
                 reduction_potential=fit_red_pot,
                 reduction_potential2=fit_red_pot2,
@@ -715,7 +715,7 @@ class TestFitEE:
                 alpha=fit_alph,
                 alpha2=fit_alph2,
                 k_0=fit_k,
-                second_k_0=fit_sec_k,
+                k0_2=fit_k2,
             )
 
     @pytest.mark.parametrize(
@@ -727,7 +727,7 @@ class TestFitEE:
         "alph, "
         "alph2, "
         "k, "
-        "sec_k, "
+        "k2, "
         "fit_red_pot, "
         "fit_red_pot2, "
         "fit_d_r, "
@@ -736,7 +736,7 @@ class TestFitEE:
         "fit_alph, "
         "fit_alph2, "
         "fit_k, "
-        "fit_sec_k, ",
+        "fit_k2, ",
         [
             (-0.05, 0.1, 1e-6, 1e-6, 1e-6, 0.5, 0.5, None, None, None, None, None, None, None, None, None, 1e-4, 1e-4),
             (-0.05, 0.1, 1e-6, 1e-6, 1e-6, None, 0.5, None, None, None, None, None, None, None, (0.3, 0.6), None, 1e-4,
@@ -757,7 +757,7 @@ class TestFitEE:
             alph,
             alph2,
             k,
-            sec_k,
+            k2,
             fit_red_pot,
             fit_red_pot2,
             fit_d_r,
@@ -766,7 +766,7 @@ class TestFitEE:
             fit_alph,
             fit_alph2,
             fit_k,
-            fit_sec_k,
+            fit_k2,
     ):
         v, i = FitEE(
             voltage_to_fit=dummy_voltages4,
@@ -784,7 +784,7 @@ class TestFitEE:
             alpha=alph,
             alpha2=alph2,
             k_0=k,
-            second_k_0=sec_k,
+            k0_2=k2,
         ).fit(
             reduction_potential=fit_red_pot,
             reduction_potential2=fit_red_pot2,
@@ -794,7 +794,7 @@ class TestFitEE:
             alpha=fit_alph,
             alpha2=fit_alph2,
             k_0=fit_k,
-            second_k_0=fit_sec_k,
+            k0_2=fit_k2,
         )
         assert v[0] == dummy_voltages4[0]
 
@@ -815,7 +815,7 @@ class TestFitSquareScheme:
         "alpha, "
         "alpha2, "
         "k_0, "
-        "second_k_0, "
+        "k0_2, "
         "k_forward, "
         "k_backward, "
         "second_k_forward, "
@@ -859,7 +859,7 @@ class TestFitSquareScheme:
             alpha,
             alpha2,
             k_0,
-            second_k_0,
+            k0_2,
             k_forward,
             k_backward,
             second_k_forward,
@@ -881,7 +881,7 @@ class TestFitSquareScheme:
                 alpha=alpha,
                 alpha2=alpha2,
                 k_0=k_0,
-                second_k_0=second_k_0,
+                k0_2=k0_2,
                 k_forward=k_forward,
                 k_backward=k_backward,
                 second_k_forward=second_k_forward,
@@ -896,7 +896,7 @@ class TestFitSquareScheme:
         "alph, "
         "alph2, "
         "k, "
-        "sec_k, "
+        "k2, "
         "kf1, "
         "kb1, "
         "kf2, "
@@ -908,7 +908,7 @@ class TestFitSquareScheme:
         "fit_alph, "
         "fit_alph2, "
         "fit_k, "
-        "fit_sec_k, "
+        "fit_k2, "
         "fit_kf1, "
         "fit_kb1, "
         "fit_kf2, "
@@ -943,7 +943,7 @@ class TestFitSquareScheme:
             alph,
             alph2,
             k,
-            sec_k,
+            k2,
             kf1,
             kb1,
             kf2,
@@ -955,7 +955,7 @@ class TestFitSquareScheme:
             fit_alph,
             fit_alph2,
             fit_k,
-            fit_sec_k,
+            fit_k2,
             fit_kf1,
             fit_kb1,
             fit_kf2,
@@ -977,7 +977,7 @@ class TestFitSquareScheme:
                 alpha=alph,
                 alpha2=alph2,
                 k_0=k,
-                second_k_0=sec_k,
+                k0_2=k2,
                 k_forward=kf1,
                 k_backward=kb1,
                 second_k_forward=kf2,
@@ -990,7 +990,7 @@ class TestFitSquareScheme:
                 alpha=fit_alph,
                 alpha2=fit_alph2,
                 k_0=fit_k,
-                second_k_0=fit_sec_k,
+                k0_2=fit_k2,
                 k_forward=fit_kf1,
                 k_backward=fit_kb1,
                 second_k_forward=fit_kf2,
@@ -1005,7 +1005,7 @@ class TestFitSquareScheme:
         "alph, "
         "alph2, "
         "k, "
-        "sec_k, "
+        "k2, "
         "kf1, "
         "kb1, "
         "kf2, "
@@ -1017,7 +1017,7 @@ class TestFitSquareScheme:
         "fit_alph, "
         "fit_alph2, "
         "fit_k, "
-        "fit_sec_k, "
+        "fit_k2, "
         "fit_kf1, "
         "fit_kb1, "
         "fit_kf2, "
@@ -1036,7 +1036,7 @@ class TestFitSquareScheme:
             alph,
             alph2,
             k,
-            sec_k,
+            k2,
             kf1,
             kb1,
             kf2,
@@ -1048,7 +1048,7 @@ class TestFitSquareScheme:
             fit_alph,
             fit_alph2,
             fit_k,
-            fit_sec_k,
+            fit_k2,
             fit_kf1,
             fit_kb1,
             fit_kf2,
@@ -1069,7 +1069,7 @@ class TestFitSquareScheme:
             alpha=alph,
             alpha2=alph2,
             k_0=k,
-            second_k_0=sec_k,
+            k0_2=k2,
             k_forward=kf1,
             k_backward=kb1,
             second_k_forward=kf2,
@@ -1082,7 +1082,7 @@ class TestFitSquareScheme:
             alpha=fit_alph,
             alpha2=fit_alph2,
             k_0=fit_k,
-            second_k_0=fit_sec_k,
+            k0_2=fit_k2,
             k_forward=fit_kf1,
             k_backward=fit_kb1,
             second_k_forward=fit_kf2,
