@@ -903,7 +903,7 @@ class FitSquareScheme(FitMechanism):
     k_backward : float | None
         First order backward chemical rate constant for first redox species (1/s).
         If known, can be fixed value, otherwise defaults to None.
-    second_k_forward : float | None
+    k_forward2 : float | None
         First order forward chemical rate constant for second redox species (1/s).
         If known, can be fixed value, otherwise defaults to None.
     second_k_backward : float | None
@@ -931,7 +931,7 @@ class FitSquareScheme(FitMechanism):
             k0_2: float | None = None,
             k_forward: float | None = None,
             k_backward: float | None = None,
-            second_k_forward: float | None = None,
+            k_forward2: float | None = None,
             second_k_backward: float | None = None,
     ) -> None:
         super().__init__(
@@ -953,7 +953,7 @@ class FitSquareScheme(FitMechanism):
         self._ensure_positive_or_none('k0_2', k0_2)
         self._ensure_positive_or_none('k_forward', k_forward)
         self._ensure_positive_or_none('k_backward', k_backward)
-        self._ensure_positive_or_none('second_k_forward', second_k_forward)
+        self._ensure_positive_or_none('k_forward2', k_forward2)
         self._ensure_positive_or_none('second_k_backward', second_k_backward)
 
         self.reduction_potential2 = reduction_potential2
@@ -963,7 +963,7 @@ class FitSquareScheme(FitMechanism):
         self.k0_2 = k0_2
         self.k_forward = k_forward
         self.k_backward = k_backward
-        self.second_k_forward = second_k_forward
+        self.k_forward2 = k_forward2
         self.second_k_backward = second_k_backward
 
         self.fixed_vars |= {
@@ -974,7 +974,7 @@ class FitSquareScheme(FitMechanism):
             'k0_2': k0_2,
             'k_forward': k_forward,
             'k_backward': k_backward,
-            'second_k_forward': second_k_forward,
+            'k_forward2': k_forward2,
             'second_k_backward': second_k_backward,
         }
 
@@ -992,7 +992,7 @@ class FitSquareScheme(FitMechanism):
             'k0_2': [1e-5, 1e-8, 1e-3],
             'k_forward': [1e-1, 5e-4, 1e3],  # TODO bounds might be too restrictive
             'k_backward': [1e-1, 5e-4, 1e3],
-            'second_k_forward': [1e-1, 5e-4, 1e3],
+            'k_forward2': [1e-1, 5e-4, 1e3],
             'second_k_backward': [1e-1, 5e-4, 1e3],
         }
 
@@ -1012,7 +1012,7 @@ class FitSquareScheme(FitMechanism):
             k0_2=get_var('k0_2'),
             k_forward=get_var('k_forward'),
             k_backward=get_var('k_backward'),
-            second_k_forward=get_var('second_k_forward'),
+            k_forward2=get_var('k_forward2'),
             second_k_backward=get_var('second_k_backward'),
             step_size=self.step_size,
             disk_radius=self.disk_radius,
@@ -1031,7 +1031,7 @@ class FitSquareScheme(FitMechanism):
             k0_2: _ParamGuess = None,
             k_forward: _ParamGuess = None,
             k_backward: _ParamGuess = None,
-            second_k_forward: _ParamGuess = None,
+            k_forward2: _ParamGuess = None,
             second_k_backward: _ParamGuess = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -1072,7 +1072,7 @@ class FitSquareScheme(FitMechanism):
         k_backward : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the first order backward chemical rate constant for the first redox species (1/s).
             Defaults to None.
-        second_k_forward : None | float | tuple[float, float] | tuple[float, float, float]
+        k_forward2 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the first order forward chemical rate constant for the second redox species (1/s).
             Defaults to None.
         second_k_backward : None | float | tuple[float, float] | tuple[float, float, float]
@@ -1099,6 +1099,6 @@ class FitSquareScheme(FitMechanism):
             'k0_2': k0_2,
             'k_forward': k_forward,
             'k_backward': k_backward,
-            'second_k_forward': second_k_forward,
+            'k_forward2': k_forward2,
             'second_k_backward': second_k_backward,
         })

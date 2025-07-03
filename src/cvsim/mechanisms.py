@@ -613,7 +613,7 @@ class SquareScheme(CyclicVoltammetryScheme):
         First order forward chemical rate constant for first redox species (1/s).
     k_backward : float
         First order backward chemical rate constant for first redox species (1/s).
-    second_k_forward : float
+    k_forward2 : float
         First order forward chemical rate constant for second redox species (1/s).
     second_k_backward : float
         First order backward chemical rate constant for second redox species (1/s).
@@ -645,7 +645,7 @@ class SquareScheme(CyclicVoltammetryScheme):
             k0_2: float,
             k_forward: float,
             k_backward: float,
-            second_k_forward: float,
+            k_forward2: float,
             second_k_backward: float,
             step_size: float = 1.0,
             disk_radius: float = 1.5,
@@ -670,7 +670,7 @@ class SquareScheme(CyclicVoltammetryScheme):
         self._ensure_positive('k_backward', k_backward)
         self._ensure_positive('second_k_backward', second_k_backward)
         self._ensure_nonnegative('k_forward', k_forward)
-        self._ensure_nonnegative('second_k_forward', second_k_forward)
+        self._ensure_nonnegative('k_forward2', k_forward2)
 
         self.reduction_potential2 = reduction_potential2
         self.alpha = alpha
@@ -679,7 +679,7 @@ class SquareScheme(CyclicVoltammetryScheme):
         self.k0_2 = k0_2 / 100  # cm/s to m/s
         self.k_forward = k_forward
         self.k_backward = k_backward
-        self.second_k_forward = second_k_forward
+        self.k_forward2 = k_forward2
         self.second_k_backward = second_k_backward
 
     def simulate(self) -> tuple[np.ndarray, np.ndarray]:
@@ -700,8 +700,8 @@ class SquareScheme(CyclicVoltammetryScheme):
 
         k_sum1 = self.k_forward + self.k_backward
         big_k1 = self.k_forward / self.k_backward
-        k_sum2 = self.second_k_forward + self.second_k_backward
-        big_k2 = self.second_k_forward / self.second_k_backward
+        k_sum2 = self.k_forward2 + self.second_k_backward
+        big_k2 = self.k_forward2 / self.second_k_backward
 
         current1 = np.zeros(self.n_max)
         current2 = np.zeros(self.n_max)
