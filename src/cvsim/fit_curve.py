@@ -680,7 +680,7 @@ class FitEE(FitMechanism):
     alpha : float | None
         Charge transfer coefficient of first redox process (no units).
         If known, can be fixed value, otherwise defaults to None.
-    second_alpha : float | None
+    alpha2 : float | None
         Charge transfer coefficient of second redox process (no units).
         If known, can be fixed value, otherwise defaults to None.
     k_0 : float | None
@@ -707,7 +707,7 @@ class FitEE(FitMechanism):
             diffusion_intermediate: float | None = None,
             diffusion_product: float | None = None,
             alpha: float | None = None,
-            second_alpha: float | None = None,
+            alpha2: float | None = None,
             k_0: float | None = None,
             second_k_0: float | None = None,
     ) -> None:
@@ -726,14 +726,14 @@ class FitEE(FitMechanism):
 
         self._ensure_positive_or_none('diffusion_intermediate', diffusion_intermediate)
         self._ensure_open_unit_interval_or_none('alpha', alpha)
-        self._ensure_open_unit_interval_or_none('second_alpha', second_alpha)
+        self._ensure_open_unit_interval_or_none('alpha2', alpha2)
         self._ensure_positive_or_none('k_0', k_0)
         self._ensure_positive_or_none('second_k_0', second_k_0)
 
         self.reduction_potential2 = reduction_potential2
         self.diffusion_intermediate = diffusion_intermediate
         self.alpha = alpha
-        self.second_alpha = second_alpha
+        self.alpha2 = alpha2
         self.k_0 = k_0
         self.second_k_0 = second_k_0
 
@@ -741,7 +741,7 @@ class FitEE(FitMechanism):
             'reduction_potential2': reduction_potential2,
             'diffusion_intermediate': diffusion_intermediate,
             'alpha': alpha,
-            'second_alpha': second_alpha,
+            'alpha2': alpha2,
             'k_0': k_0,
             'second_k_0': second_k_0,
         }
@@ -756,7 +756,7 @@ class FitEE(FitMechanism):
             ],
             'diffusion_intermediate': [1e-6, 5e-8, 1e-4],
             'alpha': [0.5, 0.01, 0.99],
-            'second_alpha': [0.5, 0.01, 0.99],
+            'alpha2': [0.5, 0.01, 0.99],
             'k_0': [1e-5, 1e-8, 1e-3],
             'second_k_0': [1e-5, 1e-8, 1e-3],
         }
@@ -773,7 +773,7 @@ class FitEE(FitMechanism):
             diffusion_intermediate=get_var('diffusion_intermediate'),
             diffusion_product=get_var('diffusion_product'),
             alpha=get_var('alpha'),
-            second_alpha=get_var('second_alpha'),
+            alpha2=get_var('alpha2'),
             k_0=get_var('k_0'),
             second_k_0=get_var('second_k_0'),
             step_size=self.step_size,
@@ -789,7 +789,7 @@ class FitEE(FitMechanism):
             diffusion_intermediate: _ParamGuess = None,
             diffusion_product: _ParamGuess = None,
             alpha: _ParamGuess = None,
-            second_alpha: _ParamGuess = None,
+            alpha2: _ParamGuess = None,
             k_0: _ParamGuess = None,
             second_k_0: _ParamGuess = None,
     ) -> tuple[np.ndarray, np.ndarray]:
@@ -819,7 +819,7 @@ class FitEE(FitMechanism):
         alpha : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the charge transfer coefficient of the second redox process (no units).
             Defaults to None.
-        second_alpha : None | float | tuple[float, float] | tuple[float, float, float]
+        alpha2 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the charge transfer coefficient of the second redox process (no units).
             Defaults to None.
         k_0 : None | float | tuple[float, float] | tuple[float, float, float]
@@ -845,7 +845,7 @@ class FitEE(FitMechanism):
             'diffusion_intermediate': diffusion_intermediate,
             'diffusion_product': diffusion_product,
             'alpha': alpha,
-            'second_alpha': second_alpha,
+            'alpha2': alpha2,
             'k_0': k_0,
             'second_k_0': second_k_0,
         })
@@ -888,7 +888,7 @@ class FitSquareScheme(FitMechanism):
     alpha : float | None
         Charge transfer coefficient of first redox process (no units).
         If known, can be fixed value, otherwise defaults to None.
-    second_alpha : float | None
+    alpha2 : float | None
         Charge transfer coefficient of second redox process (no units).
         If known, can be fixed value, otherwise defaults to None.
     k_0 : float | None
@@ -926,7 +926,7 @@ class FitSquareScheme(FitMechanism):
             diffusion_reactant: float | None = None,
             diffusion_product: float | None = None,
             alpha: float | None = None,
-            second_alpha: float | None = None,
+            alpha2: float | None = None,
             k_0: float | None = None,
             second_k_0: float | None = None,
             k_forward: float | None = None,
@@ -948,7 +948,7 @@ class FitSquareScheme(FitMechanism):
         )
 
         self._ensure_open_unit_interval_or_none('alpha', alpha)
-        self._ensure_open_unit_interval_or_none('second_alpha', second_alpha)
+        self._ensure_open_unit_interval_or_none('alpha2', alpha2)
         self._ensure_positive_or_none('k_0', k_0)
         self._ensure_positive_or_none('second_k_0', second_k_0)
         self._ensure_positive_or_none('k_forward', k_forward)
@@ -958,7 +958,7 @@ class FitSquareScheme(FitMechanism):
 
         self.reduction_potential2 = reduction_potential2
         self.alpha = alpha
-        self.second_alpha = second_alpha
+        self.alpha2 = alpha2
         self.k_0 = k_0
         self.second_k_0 = second_k_0
         self.k_forward = k_forward
@@ -969,7 +969,7 @@ class FitSquareScheme(FitMechanism):
         self.fixed_vars |= {
             'reduction_potential2': reduction_potential2,
             'alpha': alpha,
-            'second_alpha': second_alpha,
+            'alpha2': alpha2,
             'k_0': k_0,
             'second_k_0': second_k_0,
             'k_forward': k_forward,
@@ -987,7 +987,7 @@ class FitSquareScheme(FitMechanism):
                 max(self.start_potential, self.switch_potential),
             ],
             'alpha': [0.5, 0.01, 0.99],
-            'second_alpha': [0.5, 0.01, 0.99],
+            'alpha2': [0.5, 0.01, 0.99],
             'k_0': [1e-5, 1e-8, 1e-3],
             'second_k_0': [1e-5, 1e-8, 1e-3],
             'k_forward': [1e-1, 5e-4, 1e3],  # TODO bounds might be too restrictive
@@ -1007,7 +1007,7 @@ class FitSquareScheme(FitMechanism):
             diffusion_reactant=get_var('diffusion_reactant'),
             diffusion_product=get_var('diffusion_product'),
             alpha=get_var('alpha'),
-            second_alpha=get_var('second_alpha'),
+            alpha2=get_var('alpha2'),
             k_0=get_var('k_0'),
             second_k_0=get_var('second_k_0'),
             k_forward=get_var('k_forward'),
@@ -1026,7 +1026,7 @@ class FitSquareScheme(FitMechanism):
             diffusion_reactant: _ParamGuess = None,
             diffusion_product: _ParamGuess = None,
             alpha: _ParamGuess = None,
-            second_alpha: _ParamGuess = None,
+            alpha2: _ParamGuess = None,
             k_0: _ParamGuess = None,
             second_k_0: _ParamGuess = None,
             k_forward: _ParamGuess = None,
@@ -1057,7 +1057,7 @@ class FitSquareScheme(FitMechanism):
         alpha : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the charge transfer coefficient of the first redox process (no units).
             Defaults to None.
-        second_alpha : None | float | tuple[float, float] | tuple[float, float, float]
+        alpha2 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the charge transfer coefficient of the second redox process (no units).
             Defaults to None.
         k_0 : None | float | tuple[float, float] | tuple[float, float, float]
@@ -1094,7 +1094,7 @@ class FitSquareScheme(FitMechanism):
             'diffusion_reactant': diffusion_reactant,
             'diffusion_product': diffusion_product,
             'alpha': alpha,
-            'second_alpha': second_alpha,
+            'alpha2': alpha2,
             'k_0': k_0,
             'second_k_0': second_k_0,
             'k_forward': k_forward,

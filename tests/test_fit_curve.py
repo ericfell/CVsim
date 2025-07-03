@@ -567,7 +567,7 @@ class TestFitEE:
         "diffusion_intermediate, "
         "diffusion_product, "
         "alpha, "
-        "second_alpha, "
+        "alpha2, "
         "k_0, "
         "second_k_0, ",
         [
@@ -603,7 +603,7 @@ class TestFitEE:
             diffusion_intermediate,
             diffusion_product,
             alpha,
-            second_alpha,
+            alpha2,
             k_0,
             second_k_0,
     ):
@@ -622,7 +622,7 @@ class TestFitEE:
                 diffusion_intermediate=diffusion_intermediate,
                 diffusion_product=diffusion_product,
                 alpha=alpha,
-                second_alpha=second_alpha,
+                alpha2=alpha2,
                 k_0=k_0,
                 second_k_0=second_k_0,
             )
@@ -634,7 +634,7 @@ class TestFitEE:
         "d_i, "
         "d_p, "
         "alph, "
-        "sec_alph, "
+        "alph2, "
         "k, "
         "sec_k, "
         "fit_red_pot, "
@@ -643,7 +643,7 @@ class TestFitEE:
         "fit_d_i, "
         "fit_d_p, "
         "fit_alph, "
-        "fit_sec_alph, "
+        "fit_alph2, "
         "fit_k, "
         "fit_sec_k, ",
         [
@@ -675,7 +675,7 @@ class TestFitEE:
             d_i,
             d_p,
             alph,
-            sec_alph,
+            alph2,
             k,
             sec_k,
             fit_red_pot,
@@ -684,7 +684,7 @@ class TestFitEE:
             fit_d_i,
             fit_d_p,
             fit_alph,
-            fit_sec_alph,
+            fit_alph2,
             fit_k,
             fit_sec_k,
     ):
@@ -703,7 +703,7 @@ class TestFitEE:
                 diffusion_intermediate=d_i,
                 diffusion_product=d_p,
                 alpha=alph,
-                second_alpha=sec_alph,
+                alpha2=alph2,
                 k_0=k,
                 second_k_0=sec_k,
             ).fit(
@@ -713,7 +713,7 @@ class TestFitEE:
                 diffusion_intermediate=fit_d_i,
                 diffusion_product=fit_d_p,
                 alpha=fit_alph,
-                second_alpha=fit_sec_alph,
+                alpha2=fit_alph2,
                 k_0=fit_k,
                 second_k_0=fit_sec_k,
             )
@@ -725,7 +725,7 @@ class TestFitEE:
         "d_i, "
         "d_p, "
         "alph, "
-        "sec_alph, "
+        "alph2, "
         "k, "
         "sec_k, "
         "fit_red_pot, "
@@ -734,7 +734,7 @@ class TestFitEE:
         "fit_d_i, "
         "fit_d_p, "
         "fit_alph, "
-        "fit_sec_alph, "
+        "fit_alph2, "
         "fit_k, "
         "fit_sec_k, ",
         [
@@ -755,7 +755,7 @@ class TestFitEE:
             d_i,
             d_p,
             alph,
-            sec_alph,
+            alph2,
             k,
             sec_k,
             fit_red_pot,
@@ -764,7 +764,7 @@ class TestFitEE:
             fit_d_i,
             fit_d_p,
             fit_alph,
-            fit_sec_alph,
+            fit_alph2,
             fit_k,
             fit_sec_k,
     ):
@@ -782,7 +782,7 @@ class TestFitEE:
             diffusion_intermediate=d_i,
             diffusion_product=d_p,
             alpha=alph,
-            second_alpha=sec_alph,
+            alpha2=alph2,
             k_0=k,
             second_k_0=sec_k,
         ).fit(
@@ -792,7 +792,7 @@ class TestFitEE:
             diffusion_intermediate=fit_d_i,
             diffusion_product=fit_d_p,
             alpha=fit_alph,
-            second_alpha=fit_sec_alph,
+            alpha2=fit_alph2,
             k_0=fit_k,
             second_k_0=fit_sec_k,
         )
@@ -813,7 +813,7 @@ class TestFitSquareScheme:
         "diffusion_reactant, "
         "diffusion_product, "
         "alpha, "
-        "second_alpha, "
+        "alpha2, "
         "k_0, "
         "second_k_0, "
         "k_forward, "
@@ -857,7 +857,7 @@ class TestFitSquareScheme:
             diffusion_reactant,
             diffusion_product,
             alpha,
-            second_alpha,
+            alpha2,
             k_0,
             second_k_0,
             k_forward,
@@ -879,7 +879,7 @@ class TestFitSquareScheme:
                 diffusion_reactant=diffusion_reactant,
                 diffusion_product=diffusion_product,
                 alpha=alpha,
-                second_alpha=second_alpha,
+                alpha2=alpha2,
                 k_0=k_0,
                 second_k_0=second_k_0,
                 k_forward=k_forward,
@@ -894,7 +894,7 @@ class TestFitSquareScheme:
         "d_r, "
         "d_p, "
         "alph, "
-        "sec_alph, "
+        "alph2, "
         "k, "
         "sec_k, "
         "kf1, "
@@ -906,7 +906,7 @@ class TestFitSquareScheme:
         "fit_d_r, "
         "fit_d_p, "
         "fit_alph, "
-        "fit_sec_alph, "
+        "fit_alph2, "
         "fit_k, "
         "fit_sec_k, "
         "fit_kf1, "
@@ -941,7 +941,7 @@ class TestFitSquareScheme:
             d_r,
             d_p,
             alph,
-            sec_alph,
+            alph2,
             k,
             sec_k,
             kf1,
@@ -953,7 +953,7 @@ class TestFitSquareScheme:
             fit_d_r,
             fit_d_p,
             fit_alph,
-            fit_sec_alph,
+            fit_alph2,
             fit_k,
             fit_sec_k,
             fit_kf1,
@@ -975,7 +975,7 @@ class TestFitSquareScheme:
                 diffusion_reactant=d_r,
                 diffusion_product=d_p,
                 alpha=alph,
-                second_alpha=sec_alph,
+                alpha2=alph2,
                 k_0=k,
                 second_k_0=sec_k,
                 k_forward=kf1,
@@ -988,7 +988,7 @@ class TestFitSquareScheme:
                 diffusion_reactant=fit_d_r,
                 diffusion_product=fit_d_p,
                 alpha=fit_alph,
-                second_alpha=fit_sec_alph,
+                alpha2=fit_alph2,
                 k_0=fit_k,
                 second_k_0=fit_sec_k,
                 k_forward=fit_kf1,
@@ -1003,7 +1003,7 @@ class TestFitSquareScheme:
         "d_r, "
         "d_p, "
         "alph, "
-        "sec_alph, "
+        "alph2, "
         "k, "
         "sec_k, "
         "kf1, "
@@ -1015,7 +1015,7 @@ class TestFitSquareScheme:
         "fit_d_r, "
         "fit_d_p, "
         "fit_alph, "
-        "fit_sec_alph, "
+        "fit_alph2, "
         "fit_k, "
         "fit_sec_k, "
         "fit_kf1, "
@@ -1034,7 +1034,7 @@ class TestFitSquareScheme:
             d_r,
             d_p,
             alph,
-            sec_alph,
+            alph2,
             k,
             sec_k,
             kf1,
@@ -1046,7 +1046,7 @@ class TestFitSquareScheme:
             fit_d_r,
             fit_d_p,
             fit_alph,
-            fit_sec_alph,
+            fit_alph2,
             fit_k,
             fit_sec_k,
             fit_kf1,
@@ -1067,7 +1067,7 @@ class TestFitSquareScheme:
             diffusion_reactant=d_r,
             diffusion_product=d_p,
             alpha=alph,
-            second_alpha=sec_alph,
+            alpha2=alph2,
             k_0=k,
             second_k_0=sec_k,
             k_forward=kf1,
@@ -1080,7 +1080,7 @@ class TestFitSquareScheme:
             diffusion_reactant=fit_d_r,
             diffusion_product=fit_d_p,
             alpha=fit_alph,
-            second_alpha=fit_sec_alph,
+            alpha2=fit_alph2,
             k_0=fit_k,
             second_k_0=fit_sec_k,
             k_forward=fit_kf1,
