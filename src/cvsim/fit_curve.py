@@ -665,7 +665,7 @@ class FitEE(FitMechanism):
     reduction_potential : float | None
         Reduction potential of the first one-electron transfer process (V vs. reference).
         If known, can be fixed value, otherwise defaults to None.
-    second_reduction_potential : float | None
+    reduction_potential2 : float | None
         Reduction potential of the second one-electron transfer process (V vs. reference).
         If known, can be fixed value, otherwise defaults to None.
     diffusion_reactant : float | None
@@ -702,7 +702,7 @@ class FitEE(FitMechanism):
             disk_radius: float,
             temperature: float = 298.0,
             reduction_potential: float | None = None,
-            second_reduction_potential: float | None = None,
+            reduction_potential2: float | None = None,
             diffusion_reactant: float | None = None,
             diffusion_intermediate: float | None = None,
             diffusion_product: float | None = None,
@@ -730,7 +730,7 @@ class FitEE(FitMechanism):
         self._ensure_positive_or_none('k_0', k_0)
         self._ensure_positive_or_none('second_k_0', second_k_0)
 
-        self.second_reduction_potential = second_reduction_potential
+        self.reduction_potential2 = reduction_potential2
         self.diffusion_intermediate = diffusion_intermediate
         self.alpha = alpha
         self.second_alpha = second_alpha
@@ -738,7 +738,7 @@ class FitEE(FitMechanism):
         self.second_k_0 = second_k_0
 
         self.fixed_vars |= {
-            'second_reduction_potential': second_reduction_potential,
+            'reduction_potential2': reduction_potential2,
             'diffusion_intermediate': diffusion_intermediate,
             'alpha': alpha,
             'second_alpha': second_alpha,
@@ -748,7 +748,7 @@ class FitEE(FitMechanism):
 
         # default [initial guess, lower bound, upper bound]
         self.default_vars |= {
-            'second_reduction_potential': [  # TODO need to think about this
+            'reduction_potential2': [  # TODO need to think about this
                 round((self.voltage_to_fit[np.argmax(self.current_to_fit)]
                        + self.voltage_to_fit[np.argmin(self.current_to_fit)]) / 2, 3),
                 min(self.start_potential, self.switch_potential),
@@ -766,7 +766,7 @@ class FitEE(FitMechanism):
             start_potential=self.start_potential,
             switch_potential=self.switch_potential,
             reduction_potential=get_var('reduction_potential'),
-            second_reduction_potential=get_var('second_reduction_potential'),
+            reduction_potential2=get_var('reduction_potential2'),
             scan_rate=self.scan_rate,
             c_bulk=self.c_bulk,
             diffusion_reactant=get_var('diffusion_reactant'),
@@ -784,7 +784,7 @@ class FitEE(FitMechanism):
     def fit(
             self,
             reduction_potential: _ParamGuess = None,
-            second_reduction_potential: _ParamGuess = None,
+            reduction_potential2: _ParamGuess = None,
             diffusion_reactant: _ParamGuess = None,
             diffusion_intermediate: _ParamGuess = None,
             diffusion_product: _ParamGuess = None,
@@ -804,7 +804,7 @@ class FitEE(FitMechanism):
         reduction_potential : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the reduction potential of the first one-electron transfer process (V vs. reference).
             Defaults to None.
-        second_reduction_potential : None | float | tuple[float, float] | tuple[float, float, float]
+        reduction_potential2 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the reduction potential of the second one-electron transfer process (V vs. reference).
             Defaults to None.
         diffusion_reactant : None | float | tuple[float, float] | tuple[float, float, float]
@@ -840,7 +840,7 @@ class FitEE(FitMechanism):
 
         return self._fit({
             'reduction_potential': reduction_potential,
-            'second_reduction_potential': second_reduction_potential,
+            'reduction_potential2': reduction_potential2,
             'diffusion_reactant': diffusion_reactant,
             'diffusion_intermediate': diffusion_intermediate,
             'diffusion_product': diffusion_product,
@@ -876,7 +876,7 @@ class FitSquareScheme(FitMechanism):
     reduction_potential : float | None
         Reduction potential of the first one-electron transfer process (V vs. reference).
         If known, can be fixed value, otherwise defaults to None.
-    second_reduction_potential : float | None
+    reduction_potential2 : float | None
         Reduction potential of the second one-electron transfer process (V vs. reference).
         If known, can be fixed value, otherwise defaults to None.
     diffusion_reactant : float | None
@@ -922,7 +922,7 @@ class FitSquareScheme(FitMechanism):
             disk_radius: float,
             temperature: float = 298.0,
             reduction_potential: float | None = None,
-            second_reduction_potential: float | None = None,
+            reduction_potential2: float | None = None,
             diffusion_reactant: float | None = None,
             diffusion_product: float | None = None,
             alpha: float | None = None,
@@ -956,7 +956,7 @@ class FitSquareScheme(FitMechanism):
         self._ensure_positive_or_none('second_k_forward', second_k_forward)
         self._ensure_positive_or_none('second_k_backward', second_k_backward)
 
-        self.second_reduction_potential = second_reduction_potential
+        self.reduction_potential2 = reduction_potential2
         self.alpha = alpha
         self.second_alpha = second_alpha
         self.k_0 = k_0
@@ -967,7 +967,7 @@ class FitSquareScheme(FitMechanism):
         self.second_k_backward = second_k_backward
 
         self.fixed_vars |= {
-            'second_reduction_potential': second_reduction_potential,
+            'reduction_potential2': reduction_potential2,
             'alpha': alpha,
             'second_alpha': second_alpha,
             'k_0': k_0,
@@ -980,7 +980,7 @@ class FitSquareScheme(FitMechanism):
 
         # default [initial guess, lower bound, upper bound]
         self.default_vars |= {
-            'second_reduction_potential': [  # TODO need to think about this
+            'reduction_potential2': [  # TODO need to think about this
                 round((self.voltage_to_fit[np.argmax(self.current_to_fit)]
                        + self.voltage_to_fit[np.argmin(self.current_to_fit)]) / 2, 3),
                 min(self.start_potential, self.switch_potential),
@@ -1001,7 +1001,7 @@ class FitSquareScheme(FitMechanism):
             start_potential=self.start_potential,
             switch_potential=self.switch_potential,
             reduction_potential=get_var('reduction_potential'),
-            second_reduction_potential=get_var('second_reduction_potential'),
+            reduction_potential2=get_var('reduction_potential2'),
             scan_rate=self.scan_rate,
             c_bulk=self.c_bulk,
             diffusion_reactant=get_var('diffusion_reactant'),
@@ -1022,7 +1022,7 @@ class FitSquareScheme(FitMechanism):
     def fit(
             self,
             reduction_potential: _ParamGuess = None,
-            second_reduction_potential: _ParamGuess = None,
+            reduction_potential2: _ParamGuess = None,
             diffusion_reactant: _ParamGuess = None,
             diffusion_product: _ParamGuess = None,
             alpha: _ParamGuess = None,
@@ -1045,7 +1045,7 @@ class FitSquareScheme(FitMechanism):
         reduction_potential : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the reduction potential of the first one-electron transfer process (V vs. reference).
             Defaults to None.
-        second_reduction_potential : None | float | tuple[float, float] | tuple[float, float, float]
+        reduction_potential2 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the reduction potential of the second one-electron transfer process (V vs. reference).
             Defaults to None.
         diffusion_reactant : None | float | tuple[float, float] | tuple[float, float, float]
@@ -1090,7 +1090,7 @@ class FitSquareScheme(FitMechanism):
 
         return self._fit({
             'reduction_potential': reduction_potential,
-            'second_reduction_potential': second_reduction_potential,
+            'reduction_potential2': reduction_potential2,
             'diffusion_reactant': diffusion_reactant,
             'diffusion_product': diffusion_product,
             'alpha': alpha,

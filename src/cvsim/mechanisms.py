@@ -116,14 +116,14 @@ class CyclicVoltammetryScheme(ABC):
         if not 0.0 < value < 1.0:
             raise ValueError(f"'{param}' must be between 0.0 and 1.0")
 
-    def _voltage_profile_setup(self, second_reduction_potential: float | None = None) -> tuple[np.ndarray, list]:
+    def _voltage_profile_setup(self, reduction_potential2: float | None = None) -> tuple[np.ndarray, list]:
         """
         Compute the potential steps for voltage profile and for exponential Nernstian/Butler-Volmer function.
         This is equation (6:1) from [1].
 
         Parameters
         ----------
-        second_reduction_potential : float, optional
+        reduction_potential2 : float, optional
             Reduction potential of the second electron transfer process (V vs. reference).
             Only used if a 2 electron process class is called.
             Default is None.
@@ -138,8 +138,8 @@ class CyclicVoltammetryScheme(ABC):
         """
 
         electron_transfers = [self.reduction_potential]
-        if second_reduction_potential is not None:
-            electron_transfers.append(second_reduction_potential)
+        if reduction_potential2 is not None:
+            electron_transfers.append(reduction_potential2)
 
         thetas = [round((i - self.delta_theta) * 1000) for i in [self.start_potential, self.switch_potential]]
         forward_scan = np.arange(thetas[0], thetas[1], step=self.delta_theta * -1000)
@@ -447,7 +447,7 @@ class EE(CyclicVoltammetryScheme):
         Switching potential of scan (V vs. reference).
     reduction_potential : float
         Reduction potential of the first one-electron transfer process (V vs. reference).
-    second_reduction_potential : float
+    reduction_potential2 : float
         Reduction potential of the second one-electron transfer process (V vs. reference).
     scan_rate : float
         Potential sweep rate (V/s).
@@ -484,7 +484,7 @@ class EE(CyclicVoltammetryScheme):
             start_potential: float,
             switch_potential: float,
             reduction_potential: float,
-            second_reduction_potential: float,
+            reduction_potential2: float,
             scan_rate: float,
             c_bulk: float,
             diffusion_reactant: float,
@@ -516,7 +516,7 @@ class EE(CyclicVoltammetryScheme):
         self._ensure_positive('k_0', k_0)
         self._ensure_positive('second_k_0', second_k_0)
 
-        self.second_reduction_potential = second_reduction_potential
+        self.reduction_potential2 = reduction_potential2
         self.diffusion_intermediate = diffusion_intermediate / 1e4  # cm^2/s to m^2/s
         self.alpha = alpha
         self.second_alpha = second_alpha
@@ -537,7 +537,7 @@ class EE(CyclicVoltammetryScheme):
         """
 
         weights = self.semi_integration_weights
-        potential, (xi_function1, xi_function2) = self._voltage_profile_setup(self.second_reduction_potential)
+        potential, (xi_function1, xi_function2) = self._voltage_profile_setup(self.reduction_potential2)
 
         intermediate_const = (self.diffusion_intermediate / self.delta_t) ** 0.5
 
@@ -591,7 +591,7 @@ class SquareScheme(CyclicVoltammetryScheme):
         Switching potential of scan (V vs. reference).
     reduction_potential : float
         Reduction potential of the first one-electron transfer process (V vs. reference).
-    second_reduction_potential : float
+    reduction_potential2 : float
         Reduction potential of the second one-electron transfer process (V vs. reference).
     scan_rate : float
         Potential sweep rate (V/s).
@@ -634,7 +634,7 @@ class SquareScheme(CyclicVoltammetryScheme):
             start_potential: float,
             switch_potential: float,
             reduction_potential: float,
-            second_reduction_potential: float,
+            reduction_potential2: float,
             scan_rate: float,
             c_bulk: float,
             diffusion_reactant: float,
@@ -672,7 +672,7 @@ class SquareScheme(CyclicVoltammetryScheme):
         self._ensure_nonnegative('k_forward', k_forward)
         self._ensure_nonnegative('second_k_forward', second_k_forward)
 
-        self.second_reduction_potential = second_reduction_potential
+        self.reduction_potential2 = reduction_potential2
         self.alpha = alpha
         self.second_alpha = second_alpha
         self.k_0 = k_0 / 100  # cm/s to m/s
@@ -696,7 +696,7 @@ class SquareScheme(CyclicVoltammetryScheme):
         """
 
         weights = self.semi_integration_weights
-        potential, (xi_function1, xi_function2) = self._voltage_profile_setup(self.second_reduction_potential)
+        potential, (xi_function1, xi_function2) = self._voltage_profile_setup(self.reduction_potential2)
 
         k_sum1 = self.k_forward + self.k_backward
         big_k1 = self.k_forward / self.k_backward

@@ -562,7 +562,7 @@ class TestFitEE:
         "disk_radius, "
         "temperature, "
         "reduction_potential, "
-        "second_reduction_potential, "
+        "reduction_potential2, "
         "diffusion_reactant, "
         "diffusion_intermediate, "
         "diffusion_product, "
@@ -598,7 +598,7 @@ class TestFitEE:
             disk_radius,
             temperature,
             reduction_potential,
-            second_reduction_potential,
+            reduction_potential2,
             diffusion_reactant,
             diffusion_intermediate,
             diffusion_product,
@@ -617,7 +617,7 @@ class TestFitEE:
                 disk_radius=disk_radius,
                 temperature=temperature,
                 reduction_potential=reduction_potential,
-                second_reduction_potential=second_reduction_potential,
+                reduction_potential2=reduction_potential2,
                 diffusion_reactant=diffusion_reactant,
                 diffusion_intermediate=diffusion_intermediate,
                 diffusion_product=diffusion_product,
@@ -629,7 +629,7 @@ class TestFitEE:
 
     @pytest.mark.parametrize(
         "red_pot, "
-        "sec_red_pot, "
+        "red_pot2, "
         "d_r, "
         "d_i, "
         "d_p, "
@@ -638,7 +638,7 @@ class TestFitEE:
         "k, "
         "sec_k, "
         "fit_red_pot, "
-        "fit_sec_red_pot, "
+        "fit_red_pot2, "
         "fit_d_r, "
         "fit_d_i, "
         "fit_d_p, "
@@ -670,7 +670,7 @@ class TestFitEE:
     def test_fit_params(
             self,
             red_pot,
-            sec_red_pot,
+            red_pot2,
             d_r,
             d_i,
             d_p,
@@ -679,7 +679,7 @@ class TestFitEE:
             k,
             sec_k,
             fit_red_pot,
-            fit_sec_red_pot,
+            fit_red_pot2,
             fit_d_r,
             fit_d_i,
             fit_d_p,
@@ -698,7 +698,7 @@ class TestFitEE:
                 disk_radius=1.5,
                 temperature=298,
                 reduction_potential=red_pot,
-                second_reduction_potential=sec_red_pot,
+                reduction_potential2=red_pot2,
                 diffusion_reactant=d_r,
                 diffusion_intermediate=d_i,
                 diffusion_product=d_p,
@@ -708,7 +708,7 @@ class TestFitEE:
                 second_k_0=sec_k,
             ).fit(
                 reduction_potential=fit_red_pot,
-                second_reduction_potential=fit_sec_red_pot,
+                reduction_potential2=fit_red_pot2,
                 diffusion_reactant=fit_d_r,
                 diffusion_intermediate=fit_d_i,
                 diffusion_product=fit_d_p,
@@ -720,7 +720,7 @@ class TestFitEE:
 
     @pytest.mark.parametrize(
         "red_pot, "
-        "sec_red_pot, "
+        "red_pot2, "
         "d_r, "
         "d_i, "
         "d_p, "
@@ -729,7 +729,7 @@ class TestFitEE:
         "k, "
         "sec_k, "
         "fit_red_pot, "
-        "fit_sec_red_pot, "
+        "fit_red_pot2, "
         "fit_d_r, "
         "fit_d_i, "
         "fit_d_p, "
@@ -750,7 +750,7 @@ class TestFitEE:
     def test_fitting(
             self,
             red_pot,
-            sec_red_pot,
+            red_pot2,
             d_r,
             d_i,
             d_p,
@@ -759,7 +759,7 @@ class TestFitEE:
             k,
             sec_k,
             fit_red_pot,
-            fit_sec_red_pot,
+            fit_red_pot2,
             fit_d_r,
             fit_d_i,
             fit_d_p,
@@ -777,7 +777,7 @@ class TestFitEE:
             disk_radius=1.5,
             temperature=298,
             reduction_potential=red_pot,
-            second_reduction_potential=sec_red_pot,
+            reduction_potential2=red_pot2,
             diffusion_reactant=d_r,
             diffusion_intermediate=d_i,
             diffusion_product=d_p,
@@ -787,7 +787,7 @@ class TestFitEE:
             second_k_0=sec_k,
         ).fit(
             reduction_potential=fit_red_pot,
-            second_reduction_potential=fit_sec_red_pot,
+            reduction_potential2=fit_red_pot2,
             diffusion_reactant=fit_d_r,
             diffusion_intermediate=fit_d_i,
             diffusion_product=fit_d_p,
@@ -809,7 +809,7 @@ class TestFitSquareScheme:
         "disk_radius, "
         "temperature, "
         "reduction_potential, "
-        "second_reduction_potential, "
+        "reduction_potential2, "
         "diffusion_reactant, "
         "diffusion_product, "
         "alpha, "
@@ -853,7 +853,7 @@ class TestFitSquareScheme:
             disk_radius,
             temperature,
             reduction_potential,
-            second_reduction_potential,
+            reduction_potential2,
             diffusion_reactant,
             diffusion_product,
             alpha,
@@ -875,7 +875,7 @@ class TestFitSquareScheme:
                 disk_radius=disk_radius,
                 temperature=temperature,
                 reduction_potential=reduction_potential,
-                second_reduction_potential=second_reduction_potential,
+                reduction_potential2=reduction_potential2,
                 diffusion_reactant=diffusion_reactant,
                 diffusion_product=diffusion_product,
                 alpha=alpha,
@@ -890,7 +890,7 @@ class TestFitSquareScheme:
 
     @pytest.mark.parametrize(
         "red_pot, "
-        "sec_red_pot, "
+        "red_pot2, "
         "d_r, "
         "d_p, "
         "alph, "
@@ -902,7 +902,7 @@ class TestFitSquareScheme:
         "kf2, "
         "kb2, "
         "fit_red_pot, "
-        "fit_sec_red_pot, "
+        "fit_red_pot2, "
         "fit_d_r, "
         "fit_d_p, "
         "fit_alph, "
@@ -937,7 +937,7 @@ class TestFitSquareScheme:
     def test_fit_params(
             self,
             red_pot,
-            sec_red_pot,
+            red_pot2,
             d_r,
             d_p,
             alph,
@@ -949,7 +949,7 @@ class TestFitSquareScheme:
             kf2,
             kb2,
             fit_red_pot,
-            fit_sec_red_pot,
+            fit_red_pot2,
             fit_d_r,
             fit_d_p,
             fit_alph,
@@ -971,7 +971,7 @@ class TestFitSquareScheme:
                 disk_radius=1.5,
                 temperature=298,
                 reduction_potential=red_pot,
-                second_reduction_potential=sec_red_pot,
+                reduction_potential2=red_pot2,
                 diffusion_reactant=d_r,
                 diffusion_product=d_p,
                 alpha=alph,
@@ -984,7 +984,7 @@ class TestFitSquareScheme:
                 second_k_backward=kb2,
             ).fit(
                 reduction_potential=fit_red_pot,
-                second_reduction_potential=fit_sec_red_pot,
+                reduction_potential2=fit_red_pot2,
                 diffusion_reactant=fit_d_r,
                 diffusion_product=fit_d_p,
                 alpha=fit_alph,
@@ -999,7 +999,7 @@ class TestFitSquareScheme:
 
     @pytest.mark.parametrize(
         "red_pot, "
-        "sec_red_pot, "
+        "red_pot2, "
         "d_r, "
         "d_p, "
         "alph, "
@@ -1011,7 +1011,7 @@ class TestFitSquareScheme:
         "kf2, "
         "kb2, "
         "fit_red_pot, "
-        "fit_sec_red_pot, "
+        "fit_red_pot2, "
         "fit_d_r, "
         "fit_d_p, "
         "fit_alph, "
@@ -1030,7 +1030,7 @@ class TestFitSquareScheme:
     def test_fitting(
             self,
             red_pot,
-            sec_red_pot,
+            red_pot2,
             d_r,
             d_p,
             alph,
@@ -1042,7 +1042,7 @@ class TestFitSquareScheme:
             kf2,
             kb2,
             fit_red_pot,
-            fit_sec_red_pot,
+            fit_red_pot2,
             fit_d_r,
             fit_d_p,
             fit_alph,
@@ -1063,7 +1063,7 @@ class TestFitSquareScheme:
             disk_radius=1.5,
             temperature=298,
             reduction_potential=red_pot,
-            second_reduction_potential=sec_red_pot,
+            reduction_potential2=red_pot2,
             diffusion_reactant=d_r,
             diffusion_product=d_p,
             alpha=alph,
@@ -1076,7 +1076,7 @@ class TestFitSquareScheme:
             second_k_backward=kb2,
         ).fit(
             reduction_potential=fit_red_pot,
-            second_reduction_potential=fit_sec_red_pot,
+            reduction_potential2=fit_red_pot2,
             diffusion_reactant=fit_d_r,
             diffusion_product=fit_d_p,
             alpha=fit_alph,
