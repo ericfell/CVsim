@@ -464,7 +464,7 @@ class EE(CyclicVoltammetryScheme):
     alpha2 : float
         Charge transfer coefficient of second redox process (no units).
     k0 : float
-        Standard electrochemical rate constant (cm/s).
+        Standard electrochemical rate constant of first redox process (cm/s).
     k0_2 : float
         Standard electrochemical rate constant of second redox process (cm/s).
     step_size : float
@@ -602,11 +602,11 @@ class SquareScheme(CyclicVoltammetryScheme):
     diffusion_product : float
         Diffusion coefficient of product (cm^2/s).
     alpha : float
-        Charge transfer coefficient (no units).
+        Charge transfer coefficient of first redox process (no units).
     alpha2 : float
         Charge transfer coefficient of second redox process (no units).
     k0 : float
-        Standard electrochemical rate constant (cm/s).
+        Standard electrochemical rate constant of first redox process (cm/s).
     k0_2 : float
         Standard electrochemical rate constant of second redox process (cm/s).
     k_forward : float

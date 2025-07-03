@@ -817,7 +817,7 @@ class FitEE(FitMechanism):
             Optional guess for the diffusion coefficient of product (cm^2/s).
             Defaults to None.
         alpha : None | float | tuple[float, float] | tuple[float, float, float]
-            Optional guess for the charge transfer coefficient of the second redox process (no units).
+            Optional guess for the charge transfer coefficient of the first redox process (no units).
             Defaults to None.
         alpha2 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the charge transfer coefficient of the second redox process (no units).
