@@ -819,7 +819,7 @@ class TestFitSquareScheme:
         "k_forward, "
         "k_backward, "
         "k_forward2, "
-        "second_k_backward, ",
+        "k_backward2, ",
         [
             (dummy_voltages5, dummy_currents5, -0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
             (dummy_voltages5, dummy_currents5[4:], 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
@@ -863,7 +863,7 @@ class TestFitSquareScheme:
             k_forward,
             k_backward,
             k_forward2,
-            second_k_backward,
+            k_backward2,
     ):
         with pytest.raises(ValueError):
             FitSquareScheme(
@@ -885,7 +885,7 @@ class TestFitSquareScheme:
                 k_forward=k_forward,
                 k_backward=k_backward,
                 k_forward2=k_forward2,
-                second_k_backward=second_k_backward,
+                k_backward2=k_backward2,
             )
 
     @pytest.mark.parametrize(
@@ -981,7 +981,7 @@ class TestFitSquareScheme:
                 k_forward=kf1,
                 k_backward=kb1,
                 k_forward2=kf2,
-                second_k_backward=kb2,
+                k_backward2=kb2,
             ).fit(
                 reduction_potential=fit_red_pot,
                 reduction_potential2=fit_red_pot2,
@@ -994,7 +994,7 @@ class TestFitSquareScheme:
                 k_forward=fit_kf1,
                 k_backward=fit_kb1,
                 k_forward2=fit_kf2,
-                second_k_backward=fit_kb2,
+                k_backward2=fit_kb2,
             )
 
     @pytest.mark.parametrize(
@@ -1073,7 +1073,7 @@ class TestFitSquareScheme:
             k_forward=kf1,
             k_backward=kb1,
             k_forward2=kf2,
-            second_k_backward=kb2,
+            k_backward2=kb2,
         ).fit(
             reduction_potential=fit_red_pot,
             reduction_potential2=fit_red_pot2,
@@ -1086,7 +1086,7 @@ class TestFitSquareScheme:
             k_forward=fit_kf1,
             k_backward=fit_kb1,
             k_forward2=fit_kf2,
-            second_k_backward=fit_kb2,
+            k_backward2=fit_kb2,
         )
         assert v[0] == dummy_voltages5[0]
 

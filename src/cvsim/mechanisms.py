@@ -615,7 +615,7 @@ class SquareScheme(CyclicVoltammetryScheme):
         First order backward chemical rate constant for first redox species (1/s).
     k_forward2 : float
         First order forward chemical rate constant for second redox species (1/s).
-    second_k_backward : float
+    k_backward2 : float
         First order backward chemical rate constant for second redox species (1/s).
     step_size : float
         Voltage increment during CV scan (mV).
@@ -646,7 +646,7 @@ class SquareScheme(CyclicVoltammetryScheme):
             k_forward: float,
             k_backward: float,
             k_forward2: float,
-            second_k_backward: float,
+            k_backward2: float,
             step_size: float = 1.0,
             disk_radius: float = 1.5,
             temperature: float = 298.0,
@@ -668,7 +668,7 @@ class SquareScheme(CyclicVoltammetryScheme):
         self._ensure_positive('k0', k0)
         self._ensure_positive('k0_2', k0_2)
         self._ensure_positive('k_backward', k_backward)
-        self._ensure_positive('second_k_backward', second_k_backward)
+        self._ensure_positive('k_backward2', k_backward2)
         self._ensure_nonnegative('k_forward', k_forward)
         self._ensure_nonnegative('k_forward2', k_forward2)
 
@@ -680,7 +680,7 @@ class SquareScheme(CyclicVoltammetryScheme):
         self.k_forward = k_forward
         self.k_backward = k_backward
         self.k_forward2 = k_forward2
-        self.second_k_backward = second_k_backward
+        self.k_backward2 = k_backward2
 
     def simulate(self) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -700,8 +700,8 @@ class SquareScheme(CyclicVoltammetryScheme):
 
         k_sum1 = self.k_forward + self.k_backward
         big_k1 = self.k_forward / self.k_backward
-        k_sum2 = self.k_forward2 + self.second_k_backward
-        big_k2 = self.k_forward2 / self.second_k_backward
+        k_sum2 = self.k_forward2 + self.k_backward2
+        big_k2 = self.k_forward2 / self.k_backward2
 
         current1 = np.zeros(self.n_max)
         current2 = np.zeros(self.n_max)
