@@ -229,7 +229,7 @@ class E_q(CyclicVoltammetryScheme):
         Diffusion coefficient of product (cm^2/s).
     alpha : float
         Charge transfer coefficient (no units).
-    k_0 : float
+    k0 : float
         Standard electrochemical rate constant (cm/s).
     step_size : float
         Voltage increment during CV scan (mV).
@@ -253,7 +253,7 @@ class E_q(CyclicVoltammetryScheme):
             diffusion_reactant: float,
             diffusion_product: float,
             alpha: float,
-            k_0: float,
+            k0: float,
             step_size: float = 1.0,
             disk_radius: float = 1.5,
             temperature: float = 298.0,
@@ -271,10 +271,10 @@ class E_q(CyclicVoltammetryScheme):
             temperature,
         )
         self._ensure_open_unit_interval('alpha', alpha)
-        self._ensure_nonnegative('k_0', k_0)
+        self._ensure_nonnegative('k0', k0)
 
         self.alpha = alpha
-        self.k_0 = k_0 / 100  # cm/s to m/s
+        self.k0 = k0 / 100  # cm/s to m/s
 
     def simulate(self) -> tuple[np.ndarray, np.ndarray]:
         """
@@ -297,7 +297,7 @@ class E_q(CyclicVoltammetryScheme):
         for n in range(self.n_max):
             sum_weights = sum(weights[k] * current[n - k] for k in range(n))
             xi_ratio = 1 + (self.diffusion_ratio / xi_function[n])
-            xi_alpha = self.k_0 * (xi_function[n] ** self.alpha)
+            xi_alpha = self.k0 * (xi_function[n] ** self.alpha)
             numerator = self.cv_constant - xi_ratio * sum_weights
             denominator = xi_ratio + (self.velocity_constant / xi_alpha)
             current[n] = numerator / denominator
@@ -329,7 +329,7 @@ class E_qC(CyclicVoltammetryScheme):
         Diffusion coefficient of product (cm^2/s).
     alpha : float
         Charge transfer coefficient (no units).
-    k_0 : float
+    k0 : float
         Standard electrochemical rate constant (cm/s).
     k_forward : float
         First order forward chemical rate constant (1/s).
@@ -357,7 +357,7 @@ class E_qC(CyclicVoltammetryScheme):
             diffusion_reactant: float,
             diffusion_product: float,
             alpha: float,
-            k_0: float,
+            k0: float,
             k_forward: float,
             k_backward: float,
             step_size: float = 1.0,
@@ -377,12 +377,12 @@ class E_qC(CyclicVoltammetryScheme):
             temperature,
         )
         self._ensure_open_unit_interval('alpha', alpha)
-        self._ensure_nonnegative('k_0', k_0)
+        self._ensure_nonnegative('k0', k0)
         self._ensure_nonnegative('k_backward', k_backward)
         self._ensure_positive('k_forward', k_forward)
 
         self.alpha = alpha
-        self.k_0 = k_0 / 100  # cm/s to m/s
+        self.k0 = k0 / 100  # cm/s to m/s
         self.k_forward = k_forward
         self.k_backward = k_backward
 
@@ -426,7 +426,7 @@ class E_qC(CyclicVoltammetryScheme):
             numerator = (self.cv_constant - ((1 + xi_diffusion) * sum_weights)
                          - (k_const * xi_diffusion * sum_exp_weights))
 
-            xi_alpha = self.k_0 * (xi_function[n] ** self.alpha)
+            xi_alpha = self.k0 * (xi_function[n] ** self.alpha)
             denominator = 1 + (self.velocity_constant / xi_alpha) + (self.diffusion_ratio / xi_function[n])
 
             current[n] = numerator / denominator
@@ -463,7 +463,7 @@ class EE(CyclicVoltammetryScheme):
         Charge transfer coefficient of first redox process (no units).
     alpha2 : float
         Charge transfer coefficient of second redox process (no units).
-    k_0 : float
+    k0 : float
         Standard electrochemical rate constant (cm/s).
     k0_2 : float
         Standard electrochemical rate constant of second redox process (cm/s).
@@ -492,7 +492,7 @@ class EE(CyclicVoltammetryScheme):
             diffusion_product: float,
             alpha: float,
             alpha2: float,
-            k_0: float,
+            k0: float,
             k0_2: float,
             step_size: float = 1.0,
             disk_radius: float = 1.5,
@@ -513,14 +513,14 @@ class EE(CyclicVoltammetryScheme):
         self._ensure_open_unit_interval('alpha', alpha)
         self._ensure_open_unit_interval('alpha2', alpha2)
         self._ensure_positive('diffusion_intermediate', diffusion_intermediate)
-        self._ensure_positive('k_0', k_0)
+        self._ensure_positive('k0', k0)
         self._ensure_positive('k0_2', k0_2)
 
         self.reduction_potential2 = reduction_potential2
         self.diffusion_intermediate = diffusion_intermediate / 1e4  # cm^2/s to m^2/s
         self.alpha = alpha
         self.alpha2 = alpha2
-        self.k_0 = k_0 / 100  # cm/s to m/s
+        self.k0 = k0 / 100  # cm/s to m/s
         self.k0_2 = k0_2 / 100  # cm/s to m/s
 
     def simulate(self) -> tuple[np.ndarray, np.ndarray]:
@@ -542,7 +542,7 @@ class EE(CyclicVoltammetryScheme):
         intermediate_const = (self.diffusion_intermediate / self.delta_t) ** 0.5
 
         # Equation (12:15) from [1]
-        z_function = (intermediate_const / self.k_0) * (xi_function1 ** (1 - self.alpha))
+        z_function = (intermediate_const / self.k0) * (xi_function1 ** (1 - self.alpha))
 
         # Equation (12:16) from [1]
         y_function = 1 + (xi_function1 * np.sqrt(self.diffusion_intermediate / self.diffusion_reactant))
@@ -605,7 +605,7 @@ class SquareScheme(CyclicVoltammetryScheme):
         Charge transfer coefficient (no units).
     alpha2 : float
         Charge transfer coefficient of second redox process (no units).
-    k_0 : float
+    k0 : float
         Standard electrochemical rate constant (cm/s).
     k0_2 : float
         Standard electrochemical rate constant of second redox process (cm/s).
@@ -641,7 +641,7 @@ class SquareScheme(CyclicVoltammetryScheme):
             diffusion_product: float,
             alpha: float,
             alpha2: float,
-            k_0: float,
+            k0: float,
             k0_2: float,
             k_forward: float,
             k_backward: float,
@@ -665,7 +665,7 @@ class SquareScheme(CyclicVoltammetryScheme):
         )
         self._ensure_open_unit_interval('alpha', alpha)
         self._ensure_open_unit_interval('alpha2', alpha2)
-        self._ensure_positive('k_0', k_0)
+        self._ensure_positive('k0', k0)
         self._ensure_positive('k0_2', k0_2)
         self._ensure_positive('k_backward', k_backward)
         self._ensure_positive('second_k_backward', second_k_backward)
@@ -675,7 +675,7 @@ class SquareScheme(CyclicVoltammetryScheme):
         self.reduction_potential2 = reduction_potential2
         self.alpha = alpha
         self.alpha2 = alpha2
-        self.k_0 = k_0 / 100  # cm/s to m/s
+        self.k0 = k0 / 100  # cm/s to m/s
         self.k0_2 = k0_2 / 100  # cm/s to m/s
         self.k_forward = k_forward
         self.k_backward = k_backward
@@ -720,7 +720,7 @@ class SquareScheme(CyclicVoltammetryScheme):
                             - ((sum_sums + (big_k1 * sum1_exp1) - sum2_exp1) / (1 + big_k1))
                             - ((sum_sums + (big_k2 * sum1_exp2) - sum2_exp2)
                                / ((xi_function1[n] * (1 + big_k2)) / self.diffusion_ratio)))
-                           / ((self.velocity_constant / (np.power(xi_function1[n], self.alpha) * self.k_0))
+                           / ((self.velocity_constant / (np.power(xi_function1[n], self.alpha) * self.k0))
                               + (self.diffusion_ratio / xi_function1[n]) + 1))
 
             current2[n] = ((((self.cv_constant * big_k1) / (1 + big_k1))

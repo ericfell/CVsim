@@ -186,7 +186,7 @@ class TestFitE_q:
         "diffusion_reactant, "
         "diffusion_product, "
         "alpha, "
-        "k_0, ",
+        "k0, ",
         [
             (dummy_voltages2, dummy_currents2, -0.1, 1, 1, 1, 300, 0.1, 1e-6, 1e-6, 0.5, 1e-4),
             (dummy_voltages2, dummy_currents2, 0.1, 0, 1, 1, 300, 0.1, 1e-6, 1e-6, 0.5, 1e-4),
@@ -215,7 +215,7 @@ class TestFitE_q:
             diffusion_reactant,
             diffusion_product,
             alpha,
-            k_0,
+            k0,
     ):
         with pytest.raises(ValueError):
             FitE_q(
@@ -230,7 +230,7 @@ class TestFitE_q:
                 diffusion_reactant=diffusion_reactant,
                 diffusion_product=diffusion_product,
                 alpha=alpha,
-                k_0=k_0,
+                k0=k0,
             )
 
     @pytest.mark.parametrize(
@@ -284,13 +284,13 @@ class TestFitE_q:
                 diffusion_reactant=d_r,
                 diffusion_product=d_p,
                 alpha=alph,
-                k_0=k,
+                k0=k,
             ).fit(
                 reduction_potential=fit_red_pot,
                 diffusion_reactant=fit_d_r,
                 diffusion_product=fit_d_p,
                 alpha=fit_alph,
-                k_0=fit_k,
+                k0=fit_k,
             )
 
     @pytest.mark.parametrize(
@@ -334,13 +334,13 @@ class TestFitE_q:
             diffusion_reactant=d_r,
             diffusion_product=d_p,
             alpha=alph,
-            k_0=k,
+            k0=k,
         ).fit(
             reduction_potential=fit_red_pot,
             diffusion_reactant=fit_d_r,
             diffusion_product=fit_d_p,
             alpha=fit_alph,
-            k_0=fit_k,
+            k0=fit_k,
         )
         assert v[0] == dummy_voltages2[0]
 
@@ -359,7 +359,7 @@ class TestFitE_qC:
         "diffusion_reactant, "
         "diffusion_product, "
         "alpha, "
-        "k_0, "
+        "k0, "
         "k_forward, "
         "k_backward, ",
         [
@@ -392,7 +392,7 @@ class TestFitE_qC:
             diffusion_reactant,
             diffusion_product,
             alpha,
-            k_0,
+            k0,
             k_forward,
             k_backward,
     ):
@@ -409,7 +409,7 @@ class TestFitE_qC:
                 diffusion_reactant=diffusion_reactant,
                 diffusion_product=diffusion_product,
                 alpha=alpha,
-                k_0=k_0,
+                k0=k0,
                 k_forward=k_forward,
                 k_backward=k_backward,
             )
@@ -475,7 +475,7 @@ class TestFitE_qC:
                 diffusion_reactant=d_r,
                 diffusion_product=d_p,
                 alpha=alph,
-                k_0=k,
+                k0=k,
                 k_forward=k_f,
                 k_backward=k_b,
             ).fit(
@@ -483,7 +483,7 @@ class TestFitE_qC:
                 diffusion_reactant=fit_d_r,
                 diffusion_product=fit_d_p,
                 alpha=fit_alph,
-                k_0=fit_k,
+                k0=fit_k,
                 k_forward=fit_kf,
                 k_backward=fit_kb,
             )
@@ -537,7 +537,7 @@ class TestFitE_qC:
             diffusion_reactant=d_r,
             diffusion_product=d_p,
             alpha=alph,
-            k_0=k,
+            k0=k,
             k_forward=k_f,
             k_backward=k_b,
         ).fit(
@@ -545,7 +545,7 @@ class TestFitE_qC:
             diffusion_reactant=fit_d_r,
             diffusion_product=fit_d_p,
             alpha=fit_alph,
-            k_0=fit_k,
+            k0=fit_k,
             k_forward=fit_kf,
             k_backward=fit_kb,
         )
@@ -568,7 +568,7 @@ class TestFitEE:
         "diffusion_product, "
         "alpha, "
         "alpha2, "
-        "k_0, "
+        "k0, "
         "k0_2, ",
         [
             (dummy_voltages4, dummy_currents4, -0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
@@ -604,7 +604,7 @@ class TestFitEE:
             diffusion_product,
             alpha,
             alpha2,
-            k_0,
+            k0,
             k0_2,
     ):
         with pytest.raises(ValueError):
@@ -623,7 +623,7 @@ class TestFitEE:
                 diffusion_product=diffusion_product,
                 alpha=alpha,
                 alpha2=alpha2,
-                k_0=k_0,
+                k0=k0,
                 k0_2=k0_2,
             )
 
@@ -704,7 +704,7 @@ class TestFitEE:
                 diffusion_product=d_p,
                 alpha=alph,
                 alpha2=alph2,
-                k_0=k,
+                k0=k,
                 k0_2=k2,
             ).fit(
                 reduction_potential=fit_red_pot,
@@ -714,7 +714,7 @@ class TestFitEE:
                 diffusion_product=fit_d_p,
                 alpha=fit_alph,
                 alpha2=fit_alph2,
-                k_0=fit_k,
+                k0=fit_k,
                 k0_2=fit_k2,
             )
 
@@ -783,7 +783,7 @@ class TestFitEE:
             diffusion_product=d_p,
             alpha=alph,
             alpha2=alph2,
-            k_0=k,
+            k0=k,
             k0_2=k2,
         ).fit(
             reduction_potential=fit_red_pot,
@@ -793,7 +793,7 @@ class TestFitEE:
             diffusion_product=fit_d_p,
             alpha=fit_alph,
             alpha2=fit_alph2,
-            k_0=fit_k,
+            k0=fit_k,
             k0_2=fit_k2,
         )
         assert v[0] == dummy_voltages4[0]
@@ -814,7 +814,7 @@ class TestFitSquareScheme:
         "diffusion_product, "
         "alpha, "
         "alpha2, "
-        "k_0, "
+        "k0, "
         "k0_2, "
         "k_forward, "
         "k_backward, "
@@ -858,7 +858,7 @@ class TestFitSquareScheme:
             diffusion_product,
             alpha,
             alpha2,
-            k_0,
+            k0,
             k0_2,
             k_forward,
             k_backward,
@@ -880,7 +880,7 @@ class TestFitSquareScheme:
                 diffusion_product=diffusion_product,
                 alpha=alpha,
                 alpha2=alpha2,
-                k_0=k_0,
+                k0=k0,
                 k0_2=k0_2,
                 k_forward=k_forward,
                 k_backward=k_backward,
@@ -976,7 +976,7 @@ class TestFitSquareScheme:
                 diffusion_product=d_p,
                 alpha=alph,
                 alpha2=alph2,
-                k_0=k,
+                k0=k,
                 k0_2=k2,
                 k_forward=kf1,
                 k_backward=kb1,
@@ -989,7 +989,7 @@ class TestFitSquareScheme:
                 diffusion_product=fit_d_p,
                 alpha=fit_alph,
                 alpha2=fit_alph2,
-                k_0=fit_k,
+                k0=fit_k,
                 k0_2=fit_k2,
                 k_forward=fit_kf1,
                 k_backward=fit_kb1,
@@ -1068,7 +1068,7 @@ class TestFitSquareScheme:
             diffusion_product=d_p,
             alpha=alph,
             alpha2=alph2,
-            k_0=k,
+            k0=k,
             k0_2=k2,
             k_forward=kf1,
             k_backward=kb1,
@@ -1081,7 +1081,7 @@ class TestFitSquareScheme:
             diffusion_product=fit_d_p,
             alpha=fit_alph,
             alpha2=fit_alph2,
-            k_0=fit_k,
+            k0=fit_k,
             k0_2=fit_k2,
             k_forward=fit_kf1,
             k_backward=fit_kb1,
