@@ -3,7 +3,7 @@
 CVsim
 --------
 
-`cvsim` is a Python package for cyclic voltammogram (CV) simulation via the semi-analytical method developed by Oldham and Myland<sup>1</sup>. It is valid for CV experiments performed on disk macroelectrodes, and uses a semiintegration algorithm. In the limit of infinitely small potential steps, this algorithm is an exact solution. 
+`cvsim` is a Python package for cyclic voltammogram (CV) simulation via a semi-analytical method developed by Oldham and Myland<sup>1</sup>. It is valid for CV experiments performed on disk macroelectrodes, and uses a semiintegration algorithm. In the limit of infinitely small potential steps, this algorithm is an exact solution. 
 Due to the precision of standard potentiostats, simulations that use a potential step of 1-5 mV typically provide a reasonable accuracy-computing time trade-off, where accuracy sanity checks (e.g. Randles-Sevcik relationship for E<sub>r</sub> and E<sub>q</sub> mechanisms) have been performed.
 
 
@@ -23,7 +23,7 @@ git clone git@github.com:ericfell/CVsim.git
 
 ## Dependencies
 
-`cvsim.py` requires:
+`cvsim` requires:
 
 - Python (>=3.10)
 - SciPy
@@ -62,7 +62,7 @@ potential, current = E_rev(
 - Diffusion coefficients = cm<sup>2</sup>/s
 
 **Optional Parameters**
-- Potential Step size = mV
+- Potential step size = mV
 - Disk radius = mm
 - Temperature = K
 
