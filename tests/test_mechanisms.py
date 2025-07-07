@@ -131,7 +131,7 @@ class TestE_q:
         "diffusion_reactant, "
         "diffusion_product, "
         "alpha, "
-        "k_0, "
+        "k0, "
         "step_size, "
         "disk_radius, "
         "temperature, ",
@@ -159,7 +159,7 @@ class TestE_q:
             diffusion_reactant,
             diffusion_product,
             alpha,
-            k_0,
+            k0,
             step_size,
             disk_radius,
             temperature,
@@ -174,7 +174,7 @@ class TestE_q:
                 diffusion_reactant=diffusion_reactant,
                 diffusion_product=diffusion_product,
                 alpha=alpha,
-                k_0=k_0,
+                k0=k0,
                 step_size=step_size,
                 disk_radius=disk_radius,
                 temperature=temperature,
@@ -189,7 +189,7 @@ class TestE_q:
         "diffusion_reactant, "
         "diffusion_product, "
         "alpha, "
-        "k_0, "
+        "k0, "
         "step_size, "
         "disk_radius, "
         "temperature, ",
@@ -209,7 +209,7 @@ class TestE_q:
             diffusion_reactant,
             diffusion_product,
             alpha,
-            k_0,
+            k0,
             step_size,
             disk_radius,
             temperature,
@@ -223,7 +223,7 @@ class TestE_q:
             diffusion_reactant=diffusion_reactant,
             diffusion_product=diffusion_product,
             alpha=alpha,
-            k_0=k_0,
+            k0=k0,
             step_size=step_size,
             disk_radius=disk_radius,
             temperature=temperature,

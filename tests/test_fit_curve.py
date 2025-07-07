@@ -186,7 +186,7 @@ class TestFitE_q:
         "diffusion_reactant, "
         "diffusion_product, "
         "alpha, "
-        "k_0, ",
+        "k0, ",
         [
             (dummy_voltages2, dummy_currents2, -0.1, 1, 1, 1, 300, 0.1, 1e-6, 1e-6, 0.5, 1e-4),
             (dummy_voltages2, dummy_currents2, 0.1, 0, 1, 1, 300, 0.1, 1e-6, 1e-6, 0.5, 1e-4),
@@ -215,7 +215,7 @@ class TestFitE_q:
             diffusion_reactant,
             diffusion_product,
             alpha,
-            k_0,
+            k0,
     ):
         with pytest.raises(ValueError):
             FitE_q(
@@ -230,7 +230,7 @@ class TestFitE_q:
                 diffusion_reactant=diffusion_reactant,
                 diffusion_product=diffusion_product,
                 alpha=alpha,
-                k_0=k_0,
+                k0=k0,
             )
 
     @pytest.mark.parametrize(
@@ -284,13 +284,13 @@ class TestFitE_q:
                 diffusion_reactant=d_r,
                 diffusion_product=d_p,
                 alpha=alph,
-                k_0=k,
+                k0=k,
             ).fit(
                 reduction_potential=fit_red_pot,
                 diffusion_reactant=fit_d_r,
                 diffusion_product=fit_d_p,
                 alpha=fit_alph,
-                k_0=fit_k,
+                k0=fit_k,
             )
 
     @pytest.mark.parametrize(
@@ -334,13 +334,13 @@ class TestFitE_q:
             diffusion_reactant=d_r,
             diffusion_product=d_p,
             alpha=alph,
-            k_0=k,
+            k0=k,
         ).fit(
             reduction_potential=fit_red_pot,
             diffusion_reactant=fit_d_r,
             diffusion_product=fit_d_p,
             alpha=fit_alph,
-            k_0=fit_k,
+            k0=fit_k,
         )
         assert v[0] == dummy_voltages2[0]
 
@@ -359,7 +359,7 @@ class TestFitE_qC:
         "diffusion_reactant, "
         "diffusion_product, "
         "alpha, "
-        "k_0, "
+        "k0, "
         "k_forward, "
         "k_backward, ",
         [
@@ -392,7 +392,7 @@ class TestFitE_qC:
             diffusion_reactant,
             diffusion_product,
             alpha,
-            k_0,
+            k0,
             k_forward,
             k_backward,
     ):
@@ -409,7 +409,7 @@ class TestFitE_qC:
                 diffusion_reactant=diffusion_reactant,
                 diffusion_product=diffusion_product,
                 alpha=alpha,
-                k_0=k_0,
+                k0=k0,
                 k_forward=k_forward,
                 k_backward=k_backward,
             )
@@ -475,7 +475,7 @@ class TestFitE_qC:
                 diffusion_reactant=d_r,
                 diffusion_product=d_p,
                 alpha=alph,
-                k_0=k,
+                k0=k,
                 k_forward=k_f,
                 k_backward=k_b,
             ).fit(
@@ -483,7 +483,7 @@ class TestFitE_qC:
                 diffusion_reactant=fit_d_r,
                 diffusion_product=fit_d_p,
                 alpha=fit_alph,
-                k_0=fit_k,
+                k0=fit_k,
                 k_forward=fit_kf,
                 k_backward=fit_kb,
             )
@@ -537,7 +537,7 @@ class TestFitE_qC:
             diffusion_reactant=d_r,
             diffusion_product=d_p,
             alpha=alph,
-            k_0=k,
+            k0=k,
             k_forward=k_f,
             k_backward=k_b,
         ).fit(
@@ -545,7 +545,7 @@ class TestFitE_qC:
             diffusion_reactant=fit_d_r,
             diffusion_product=fit_d_p,
             alpha=fit_alph,
-            k_0=fit_k,
+            k0=fit_k,
             k_forward=fit_kf,
             k_backward=fit_kb,
         )
@@ -562,14 +562,14 @@ class TestFitEE:
         "disk_radius, "
         "temperature, "
         "reduction_potential, "
-        "second_reduction_potential, "
+        "reduction_potential2, "
         "diffusion_reactant, "
         "diffusion_intermediate, "
         "diffusion_product, "
         "alpha, "
-        "second_alpha, "
-        "k_0, "
-        "second_k_0, ",
+        "alpha2, "
+        "k0, "
+        "k0_2, ",
         [
             (dummy_voltages4, dummy_currents4, -0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
             (dummy_voltages4, dummy_currents4[4:], 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5),
@@ -598,14 +598,14 @@ class TestFitEE:
             disk_radius,
             temperature,
             reduction_potential,
-            second_reduction_potential,
+            reduction_potential2,
             diffusion_reactant,
             diffusion_intermediate,
             diffusion_product,
             alpha,
-            second_alpha,
-            k_0,
-            second_k_0,
+            alpha2,
+            k0,
+            k0_2,
     ):
         with pytest.raises(ValueError):
             FitEE(
@@ -617,35 +617,35 @@ class TestFitEE:
                 disk_radius=disk_radius,
                 temperature=temperature,
                 reduction_potential=reduction_potential,
-                second_reduction_potential=second_reduction_potential,
+                reduction_potential2=reduction_potential2,
                 diffusion_reactant=diffusion_reactant,
                 diffusion_intermediate=diffusion_intermediate,
                 diffusion_product=diffusion_product,
                 alpha=alpha,
-                second_alpha=second_alpha,
-                k_0=k_0,
-                second_k_0=second_k_0,
+                alpha2=alpha2,
+                k0=k0,
+                k0_2=k0_2,
             )
 
     @pytest.mark.parametrize(
         "red_pot, "
-        "sec_red_pot, "
+        "red_pot2, "
         "d_r, "
         "d_i, "
         "d_p, "
         "alph, "
-        "sec_alph, "
+        "alph2, "
         "k, "
-        "sec_k, "
+        "k2, "
         "fit_red_pot, "
-        "fit_sec_red_pot, "
+        "fit_red_pot2, "
         "fit_d_r, "
         "fit_d_i, "
         "fit_d_p, "
         "fit_alph, "
-        "fit_sec_alph, "
+        "fit_alph2, "
         "fit_k, "
-        "fit_sec_k, ",
+        "fit_k2, ",
         [
             (0.3, None, None, None, None, None, None, None, None, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-4),
             (None, 0.0, None, None, None, None, None, None, None, 0.1, 0.2, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-4),
@@ -670,23 +670,23 @@ class TestFitEE:
     def test_fit_params(
             self,
             red_pot,
-            sec_red_pot,
+            red_pot2,
             d_r,
             d_i,
             d_p,
             alph,
-            sec_alph,
+            alph2,
             k,
-            sec_k,
+            k2,
             fit_red_pot,
-            fit_sec_red_pot,
+            fit_red_pot2,
             fit_d_r,
             fit_d_i,
             fit_d_p,
             fit_alph,
-            fit_sec_alph,
+            fit_alph2,
             fit_k,
-            fit_sec_k,
+            fit_k2,
     ):
         with pytest.raises(ValueError):
             v, i = FitEE(
@@ -698,45 +698,45 @@ class TestFitEE:
                 disk_radius=1.5,
                 temperature=298,
                 reduction_potential=red_pot,
-                second_reduction_potential=sec_red_pot,
+                reduction_potential2=red_pot2,
                 diffusion_reactant=d_r,
                 diffusion_intermediate=d_i,
                 diffusion_product=d_p,
                 alpha=alph,
-                second_alpha=sec_alph,
-                k_0=k,
-                second_k_0=sec_k,
+                alpha2=alph2,
+                k0=k,
+                k0_2=k2,
             ).fit(
                 reduction_potential=fit_red_pot,
-                second_reduction_potential=fit_sec_red_pot,
+                reduction_potential2=fit_red_pot2,
                 diffusion_reactant=fit_d_r,
                 diffusion_intermediate=fit_d_i,
                 diffusion_product=fit_d_p,
                 alpha=fit_alph,
-                second_alpha=fit_sec_alph,
-                k_0=fit_k,
-                second_k_0=fit_sec_k,
+                alpha2=fit_alph2,
+                k0=fit_k,
+                k0_2=fit_k2,
             )
 
     @pytest.mark.parametrize(
         "red_pot, "
-        "sec_red_pot, "
+        "red_pot2, "
         "d_r, "
         "d_i, "
         "d_p, "
         "alph, "
-        "sec_alph, "
+        "alph2, "
         "k, "
-        "sec_k, "
+        "k2, "
         "fit_red_pot, "
-        "fit_sec_red_pot, "
+        "fit_red_pot2, "
         "fit_d_r, "
         "fit_d_i, "
         "fit_d_p, "
         "fit_alph, "
-        "fit_sec_alph, "
+        "fit_alph2, "
         "fit_k, "
-        "fit_sec_k, ",
+        "fit_k2, ",
         [
             (-0.05, 0.1, 1e-6, 1e-6, 1e-6, 0.5, 0.5, None, None, None, None, None, None, None, None, None, 1e-4, 1e-4),
             (-0.05, 0.1, 1e-6, 1e-6, 1e-6, None, 0.5, None, None, None, None, None, None, None, (0.3, 0.6), None, 1e-4,
@@ -750,23 +750,23 @@ class TestFitEE:
     def test_fitting(
             self,
             red_pot,
-            sec_red_pot,
+            red_pot2,
             d_r,
             d_i,
             d_p,
             alph,
-            sec_alph,
+            alph2,
             k,
-            sec_k,
+            k2,
             fit_red_pot,
-            fit_sec_red_pot,
+            fit_red_pot2,
             fit_d_r,
             fit_d_i,
             fit_d_p,
             fit_alph,
-            fit_sec_alph,
+            fit_alph2,
             fit_k,
-            fit_sec_k,
+            fit_k2,
     ):
         v, i = FitEE(
             voltage_to_fit=dummy_voltages4,
@@ -777,24 +777,24 @@ class TestFitEE:
             disk_radius=1.5,
             temperature=298,
             reduction_potential=red_pot,
-            second_reduction_potential=sec_red_pot,
+            reduction_potential2=red_pot2,
             diffusion_reactant=d_r,
             diffusion_intermediate=d_i,
             diffusion_product=d_p,
             alpha=alph,
-            second_alpha=sec_alph,
-            k_0=k,
-            second_k_0=sec_k,
+            alpha2=alph2,
+            k0=k,
+            k0_2=k2,
         ).fit(
             reduction_potential=fit_red_pot,
-            second_reduction_potential=fit_sec_red_pot,
+            reduction_potential2=fit_red_pot2,
             diffusion_reactant=fit_d_r,
             diffusion_intermediate=fit_d_i,
             diffusion_product=fit_d_p,
             alpha=fit_alph,
-            second_alpha=fit_sec_alph,
-            k_0=fit_k,
-            second_k_0=fit_sec_k,
+            alpha2=fit_alph2,
+            k0=fit_k,
+            k0_2=fit_k2,
         )
         assert v[0] == dummy_voltages4[0]
 
@@ -809,17 +809,17 @@ class TestFitSquareScheme:
         "disk_radius, "
         "temperature, "
         "reduction_potential, "
-        "second_reduction_potential, "
+        "reduction_potential2, "
         "diffusion_reactant, "
         "diffusion_product, "
         "alpha, "
-        "second_alpha, "
-        "k_0, "
-        "second_k_0, "
+        "alpha2, "
+        "k0, "
+        "k0_2, "
         "k_forward, "
         "k_backward, "
-        "second_k_forward, "
-        "second_k_backward, ",
+        "k_forward2, "
+        "k_backward2, ",
         [
             (dummy_voltages5, dummy_currents5, -0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
             (dummy_voltages5, dummy_currents5[4:], 0.1, 1, 1, 1, 300, 0.1, 0.2, 1e-6, 1e-6, 0.5, 0.5, 1e-4, 1e-5, 1e-3, 1e-3, 1e-3, 1e-3),
@@ -853,17 +853,17 @@ class TestFitSquareScheme:
             disk_radius,
             temperature,
             reduction_potential,
-            second_reduction_potential,
+            reduction_potential2,
             diffusion_reactant,
             diffusion_product,
             alpha,
-            second_alpha,
-            k_0,
-            second_k_0,
+            alpha2,
+            k0,
+            k0_2,
             k_forward,
             k_backward,
-            second_k_forward,
-            second_k_backward,
+            k_forward2,
+            k_backward2,
     ):
         with pytest.raises(ValueError):
             FitSquareScheme(
@@ -875,40 +875,40 @@ class TestFitSquareScheme:
                 disk_radius=disk_radius,
                 temperature=temperature,
                 reduction_potential=reduction_potential,
-                second_reduction_potential=second_reduction_potential,
+                reduction_potential2=reduction_potential2,
                 diffusion_reactant=diffusion_reactant,
                 diffusion_product=diffusion_product,
                 alpha=alpha,
-                second_alpha=second_alpha,
-                k_0=k_0,
-                second_k_0=second_k_0,
+                alpha2=alpha2,
+                k0=k0,
+                k0_2=k0_2,
                 k_forward=k_forward,
                 k_backward=k_backward,
-                second_k_forward=second_k_forward,
-                second_k_backward=second_k_backward,
+                k_forward2=k_forward2,
+                k_backward2=k_backward2,
             )
 
     @pytest.mark.parametrize(
         "red_pot, "
-        "sec_red_pot, "
+        "red_pot2, "
         "d_r, "
         "d_p, "
         "alph, "
-        "sec_alph, "
+        "alph2, "
         "k, "
-        "sec_k, "
+        "k2, "
         "kf1, "
         "kb1, "
         "kf2, "
         "kb2, "
         "fit_red_pot, "
-        "fit_sec_red_pot, "
+        "fit_red_pot2, "
         "fit_d_r, "
         "fit_d_p, "
         "fit_alph, "
-        "fit_sec_alph, "
+        "fit_alph2, "
         "fit_k, "
-        "fit_sec_k, "
+        "fit_k2, "
         "fit_kf1, "
         "fit_kb1, "
         "fit_kf2, "
@@ -937,25 +937,25 @@ class TestFitSquareScheme:
     def test_fit_params(
             self,
             red_pot,
-            sec_red_pot,
+            red_pot2,
             d_r,
             d_p,
             alph,
-            sec_alph,
+            alph2,
             k,
-            sec_k,
+            k2,
             kf1,
             kb1,
             kf2,
             kb2,
             fit_red_pot,
-            fit_sec_red_pot,
+            fit_red_pot2,
             fit_d_r,
             fit_d_p,
             fit_alph,
-            fit_sec_alph,
+            fit_alph2,
             fit_k,
-            fit_sec_k,
+            fit_k2,
             fit_kf1,
             fit_kb1,
             fit_kf2,
@@ -971,53 +971,53 @@ class TestFitSquareScheme:
                 disk_radius=1.5,
                 temperature=298,
                 reduction_potential=red_pot,
-                second_reduction_potential=sec_red_pot,
+                reduction_potential2=red_pot2,
                 diffusion_reactant=d_r,
                 diffusion_product=d_p,
                 alpha=alph,
-                second_alpha=sec_alph,
-                k_0=k,
-                second_k_0=sec_k,
+                alpha2=alph2,
+                k0=k,
+                k0_2=k2,
                 k_forward=kf1,
                 k_backward=kb1,
-                second_k_forward=kf2,
-                second_k_backward=kb2,
+                k_forward2=kf2,
+                k_backward2=kb2,
             ).fit(
                 reduction_potential=fit_red_pot,
-                second_reduction_potential=fit_sec_red_pot,
+                reduction_potential2=fit_red_pot2,
                 diffusion_reactant=fit_d_r,
                 diffusion_product=fit_d_p,
                 alpha=fit_alph,
-                second_alpha=fit_sec_alph,
-                k_0=fit_k,
-                second_k_0=fit_sec_k,
+                alpha2=fit_alph2,
+                k0=fit_k,
+                k0_2=fit_k2,
                 k_forward=fit_kf1,
                 k_backward=fit_kb1,
-                second_k_forward=fit_kf2,
-                second_k_backward=fit_kb2,
+                k_forward2=fit_kf2,
+                k_backward2=fit_kb2,
             )
 
     @pytest.mark.parametrize(
         "red_pot, "
-        "sec_red_pot, "
+        "red_pot2, "
         "d_r, "
         "d_p, "
         "alph, "
-        "sec_alph, "
+        "alph2, "
         "k, "
-        "sec_k, "
+        "k2, "
         "kf1, "
         "kb1, "
         "kf2, "
         "kb2, "
         "fit_red_pot, "
-        "fit_sec_red_pot, "
+        "fit_red_pot2, "
         "fit_d_r, "
         "fit_d_p, "
         "fit_alph, "
-        "fit_sec_alph, "
+        "fit_alph2, "
         "fit_k, "
-        "fit_sec_k, "
+        "fit_k2, "
         "fit_kf1, "
         "fit_kb1, "
         "fit_kf2, "
@@ -1030,25 +1030,25 @@ class TestFitSquareScheme:
     def test_fitting(
             self,
             red_pot,
-            sec_red_pot,
+            red_pot2,
             d_r,
             d_p,
             alph,
-            sec_alph,
+            alph2,
             k,
-            sec_k,
+            k2,
             kf1,
             kb1,
             kf2,
             kb2,
             fit_red_pot,
-            fit_sec_red_pot,
+            fit_red_pot2,
             fit_d_r,
             fit_d_p,
             fit_alph,
-            fit_sec_alph,
+            fit_alph2,
             fit_k,
-            fit_sec_k,
+            fit_k2,
             fit_kf1,
             fit_kb1,
             fit_kf2,
@@ -1063,30 +1063,30 @@ class TestFitSquareScheme:
             disk_radius=1.5,
             temperature=298,
             reduction_potential=red_pot,
-            second_reduction_potential=sec_red_pot,
+            reduction_potential2=red_pot2,
             diffusion_reactant=d_r,
             diffusion_product=d_p,
             alpha=alph,
-            second_alpha=sec_alph,
-            k_0=k,
-            second_k_0=sec_k,
+            alpha2=alph2,
+            k0=k,
+            k0_2=k2,
             k_forward=kf1,
             k_backward=kb1,
-            second_k_forward=kf2,
-            second_k_backward=kb2,
+            k_forward2=kf2,
+            k_backward2=kb2,
         ).fit(
             reduction_potential=fit_red_pot,
-            second_reduction_potential=fit_sec_red_pot,
+            reduction_potential2=fit_red_pot2,
             diffusion_reactant=fit_d_r,
             diffusion_product=fit_d_p,
             alpha=fit_alph,
-            second_alpha=fit_sec_alph,
-            k_0=fit_k,
-            second_k_0=fit_sec_k,
+            alpha2=fit_alph2,
+            k0=fit_k,
+            k0_2=fit_k2,
             k_forward=fit_kf1,
             k_backward=fit_kb1,
-            second_k_forward=fit_kf2,
-            second_k_backward=fit_kb2,
+            k_forward2=fit_kf2,
+            k_backward2=fit_kb2,
         )
         assert v[0] == dummy_voltages5[0]
 
