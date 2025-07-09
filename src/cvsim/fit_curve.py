@@ -199,7 +199,7 @@ class FitMechanism(ABC):
         for param, (initial, lower, upper) in fit_default_vars.items():
             if not lower < initial < upper:
                 # check if default initial guess is outside bounds, set guess to avg of bounds
-                # not useful if spans many order of magnitudes, use logarithmic mean? possible todo
+                # not useful if spans many order of magnitudes, could use logarithmic mean
                 fit_default_vars[param] = [(lower + upper) / 2, lower, upper]
                 # check if user's guess was outside bounds
                 if initial != self.default_vars[param][0]:
@@ -748,7 +748,7 @@ class FitEE(FitMechanism):
 
         # default [initial guess, lower bound, upper bound]
         self.default_vars |= {
-            'reduction_potential2': [  # TODO need to think about this
+            'reduction_potential2': [
                 round((self.voltage_to_fit[np.argmax(self.current_to_fit)]
                        + self.voltage_to_fit[np.argmin(self.current_to_fit)]) / 2, 3),
                 min(self.start_potential, self.switch_potential),
@@ -980,7 +980,7 @@ class FitSquareScheme(FitMechanism):
 
         # default [initial guess, lower bound, upper bound]
         self.default_vars |= {
-            'reduction_potential2': [  # TODO need to think about this
+            'reduction_potential2': [
                 round((self.voltage_to_fit[np.argmax(self.current_to_fit)]
                        + self.voltage_to_fit[np.argmin(self.current_to_fit)]) / 2, 3),
                 min(self.start_potential, self.switch_potential),
@@ -990,7 +990,7 @@ class FitSquareScheme(FitMechanism):
             'alpha2': [0.5, 0.01, 0.99],
             'k0': [1e-5, 1e-8, 1e-3],
             'k0_2': [1e-5, 1e-8, 1e-3],
-            'k_forward': [1e-1, 5e-4, 1e3],  # TODO bounds might be too restrictive
+            'k_forward': [1e-1, 5e-4, 1e3],
             'k_backward': [1e-1, 5e-4, 1e3],
             'k_forward2': [1e-1, 5e-4, 1e3],
             'k_backward2': [1e-1, 5e-4, 1e3],
