@@ -307,7 +307,7 @@ class FitE_rev(FitMechanism):
         current_fit : np.ndarray
             Array of current (A) values of the CV fit.
         final_fit : dict
-            Dictionary of final fitting parameters.
+            Dictionary of final fitting parameter values of the CV fit.
 
         """
 
@@ -457,7 +457,7 @@ class FitE_q(FitMechanism):
         current_fit : np.ndarray
             Array of current (A) values of the CV fit.
         final_fit : dict
-            Dictionary of final fitting parameters.
+            Dictionary of final fitting parameter values of the CV fit.
 
         """
         return self._fit({
@@ -636,7 +636,7 @@ class FitE_qC(FitMechanism):
         current_fit : np.ndarray
             Array of current (A) values of the CV fit.
         final_fit : dict
-            Dictionary of final fitting parameters.
+            Dictionary of final fitting parameter values of the CV fit.
 
         """
         return self._fit({
@@ -844,7 +844,7 @@ class FitEE(FitMechanism):
         current_fit : np.ndarray
             Array of current (A) values of the CV fit.
         final_fit : dict
-            Dictionary of final fitting parameters.
+            Dictionary of final fitting parameter values of the CV fit.
 
         """
 
@@ -1096,7 +1096,7 @@ class FitSquareScheme(FitMechanism):
         current_fit : np.ndarray
             Array of current (A) values of the CV fit.
         final_fit : dict
-            Dictionary of final fitting parameters.
+            Dictionary of final fitting parameter values of the CV fit.
 
         """
 
