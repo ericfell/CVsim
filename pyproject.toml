@@ -23,7 +23,7 @@ keywords = ["electrochemistry", "cyclic voltammetry"]
 
 [project.urls]
 Homepage = "https://github.com/ericfell/CVsim"
-
+Documentation = "https://cvsim.readthedocs.io/en/latest/index.html"
 
 [tool.pytest.ini_options]
 addopts = [

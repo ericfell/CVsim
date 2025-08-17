@@ -115,7 +115,7 @@ class TestFitE_rev:
             fit_d_p,
     ):
         with pytest.raises(ValueError):
-            v, i = FitE_rev(
+            FitE_rev(
                 voltage_to_fit=dummy_voltages,
                 current_to_fit=dummy_currents,
                 scan_rate=0.1,
@@ -153,7 +153,7 @@ class TestFitE_rev:
             fit_d_r,
             fit_d_p,
     ):
-        v, i = FitE_rev(
+        v, *_ = FitE_rev(
             voltage_to_fit=dummy_voltages,
             current_to_fit=dummy_currents,
             scan_rate=0.1,
@@ -272,7 +272,7 @@ class TestFitE_q:
             fit_k,
     ):
         with pytest.raises(ValueError):
-            v, i = FitE_q(
+            FitE_q(
                 voltage_to_fit=dummy_voltages2,
                 current_to_fit=dummy_currents2,
                 scan_rate=0.1,
@@ -322,7 +322,7 @@ class TestFitE_q:
             fit_alph,
             fit_k,
     ):
-        v, i = FitE_q(
+        v, *_ = FitE_q(
             voltage_to_fit=dummy_voltages2,
             current_to_fit=dummy_currents2,
             scan_rate=0.1,
@@ -463,7 +463,7 @@ class TestFitE_qC:
             fit_kb,
     ):
         with pytest.raises(ValueError):
-            v, i = FitE_qC(
+            FitE_qC(
                 voltage_to_fit=dummy_voltages2,
                 current_to_fit=dummy_currents2,
                 scan_rate=0.1,
@@ -525,7 +525,7 @@ class TestFitE_qC:
             fit_kf,
             fit_kb,
     ):
-        v, i = FitE_qC(
+        v, *_ = FitE_qC(
             voltage_to_fit=dummy_voltages3,
             current_to_fit=dummy_currents3,
             scan_rate=0.1,
@@ -689,7 +689,7 @@ class TestFitEE:
             fit_k2,
     ):
         with pytest.raises(ValueError):
-            v, i = FitEE(
+            FitEE(
                 voltage_to_fit=dummy_voltages4,
                 current_to_fit=dummy_currents4,
                 scan_rate=0.1,
@@ -768,7 +768,7 @@ class TestFitEE:
             fit_k,
             fit_k2,
     ):
-        v, i = FitEE(
+        v, *_ = FitEE(
             voltage_to_fit=dummy_voltages4,
             current_to_fit=dummy_currents4,
             scan_rate=0.1,
@@ -962,7 +962,7 @@ class TestFitSquareScheme:
             fit_kb2,
     ):
         with pytest.raises(ValueError):
-            v, i = FitSquareScheme(
+            FitSquareScheme(
                 voltage_to_fit=dummy_voltages5,
                 current_to_fit=dummy_currents5,
                 scan_rate=0.1,
@@ -1054,7 +1054,7 @@ class TestFitSquareScheme:
             fit_kf2,
             fit_kb2,
     ):
-        v, i = FitSquareScheme(
+        v, *_ = FitSquareScheme(
             voltage_to_fit=dummy_voltages5,
             current_to_fit=dummy_currents5,
             scan_rate=0.1,
@@ -1089,5 +1089,4 @@ class TestFitSquareScheme:
             k_backward2=fit_kb2,
         )
         assert v[0] == dummy_voltages5[0]
-
 

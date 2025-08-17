@@ -231,13 +231,432 @@ class TestE_q:
         assert len(potential) == len(current)
 
 
-# class TestE_qC:
-#     raise NotImplementedError
-#
-#
-# class TestEE:
-#     raise NotImplementedError
-#
-#
-# class TestSquareScheme:
-#     raise NotImplementedError
+class TestE_qC:
+
+    @pytest.mark.parametrize(
+        "start_potential, "
+        "switch_potential, "
+        "reduction_potential, "
+        "scan_rate, "
+        "c_bulk, "
+        "diffusion_reactant, "
+        "diffusion_product, "
+        "alpha, "
+        "k0, "
+        "k_forward, "
+        "k_backward, "
+        "step_size, "
+        "disk_radius, "
+        "temperature, ",
+        [
+            (-0.5, 0.4, 0, 0, 1, 1e-6, 1e-6, 0.5, 1e-3, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 1, 1, 1e-6, 1e-6, -0.5, 1e-3, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 1, -0.1, 1e-6, 1e-6, 0.5, 1e-3, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 1, 1, -1e-6, 1e-6, 0.5, 1e-3, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 1, 1, 1e-6, -1e-6, 0.5, 1e-3, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 1, 1, 1e-6, 1e-6, 1, 1e-3, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 1, 1, 1e-6, 1e-6, 0.5, 0, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 1, 1, 1e-6, 1e-6, 0.5, 1e-3, -1.5, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 2, 1, 1e-6, 1e-6, 0.5, 1e-3, 1, -10, 1, 1, 300),
+            (-0.5, 0.4, 0, 1, 1, 1e-6, 1e-6, 0.5, 1e-3, 1, 1, 1, 1, 0.0),
+            (0.4, 0.4, 0, 3, 1, 1e-6, 1e-6, 0.5, 1e-3, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 1, 1, 1e-6, 1e-6, 0.5, 1e-3, 0, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 1, 1, 1e-6, 1e-6, 0.5, 1e-3, -2, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 1, 1, 1e-6, 1e-6, 0.5, 1e-3, 1, 0, 1, 1, 300),
+            (-0.5, 0.4, 0, 1, 1, 1e-6, 1e-6, 0.5, 1e-3, 1, -10, 1, 1, 300),
+        ],
+    )
+    def test_init(
+            self,
+            start_potential,
+            switch_potential,
+            reduction_potential,
+            scan_rate,
+            c_bulk,
+            diffusion_reactant,
+            diffusion_product,
+            alpha,
+            k0,
+            k_forward,
+            k_backward,
+            step_size,
+            disk_radius,
+            temperature,
+    ):
+        with pytest.raises(ValueError):
+            _ = E_qC(
+                start_potential=start_potential,
+                switch_potential=switch_potential,
+                reduction_potential=reduction_potential,
+                scan_rate=scan_rate,
+                c_bulk=c_bulk,
+                diffusion_reactant=diffusion_reactant,
+                diffusion_product=diffusion_product,
+                alpha=alpha,
+                k0=k0,
+                k_forward=k_forward,
+                k_backward=k_backward,
+                step_size=step_size,
+                disk_radius=disk_radius,
+                temperature=temperature,
+            )
+
+    @pytest.mark.parametrize(
+        "start_potential, "
+        "switch_potential, "
+        "reduction_potential, "
+        "scan_rate, "
+        "c_bulk, "
+        "diffusion_reactant, "
+        "diffusion_product, "
+        "alpha, "
+        "k0, "
+        "k_forward, "
+        "k_backward, "
+        "step_size, "
+        "disk_radius, "
+        "temperature, ",
+        [
+            (-0.5, 0.4, 0, 1, 1, 1e-6, 1e-6, 0.5, 1e-3, 1, 1, 1, 1, 300),
+            (0.5, -0.4, 0, 2, 1, 1e-6, 1e-6, 0.5, 2e-3, 1, 1, 1, 1, 300),
+            (-1.0, 0.7, 0, 5, 1, 1e-6, 1e-6, 0.6, 1e-3, 1, 1, 1, 1, 300),
+        ],
+    )
+    def test_simulate(
+            self,
+            start_potential,
+            switch_potential,
+            reduction_potential,
+            scan_rate,
+            c_bulk,
+            diffusion_reactant,
+            diffusion_product,
+            alpha,
+            k0,
+            k_forward,
+            k_backward,
+            step_size,
+            disk_radius,
+            temperature,
+    ):
+        potential, current = E_qC(
+            start_potential=start_potential,
+            switch_potential=switch_potential,
+            reduction_potential=reduction_potential,
+            scan_rate=scan_rate,
+            c_bulk=c_bulk,
+            diffusion_reactant=diffusion_reactant,
+            diffusion_product=diffusion_product,
+            alpha=alpha,
+            k0=k0,
+            k_forward=k_forward,
+            k_backward=k_backward,
+            step_size=step_size,
+            disk_radius=disk_radius,
+            temperature=temperature,
+        ).simulate()
+        assert len(potential) == len(current)
+
+
+class TestEE:
+
+    @pytest.mark.parametrize(
+        "start_potential, "
+        "switch_potential, "
+        "reduction_potential, "
+        "reduction_potential2, "
+        "scan_rate, "
+        "c_bulk, "
+        "diffusion_reactant, "
+        "diffusion_intermediate, "
+        "diffusion_product, "
+        "alpha, "
+        "alpha2, "
+        "k0, "
+        "k0_2, "
+        "step_size, "
+        "disk_radius, "
+        "temperature, ",
+        [
+            (-0.5, 0.4, 0, 0.1, 0, 1, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, -0.1, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 1e-6, -0.5, 0.5, 1e-3, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, -1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 0, 1e-6, 0.5, 0.5, 1e-3, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, -1e-6, 0.5, 0.5, 1e-3, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 1e-6, 1, 0.5, 1e-3, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 0, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-3, -1.5, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 0, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 2, 1, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, -10, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, 1, 1, 0.0),
+            (0.4, 0.4, 0, 0.1, 3, 1, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-3, -2, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, 0, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, 1, -0.5, 300),
+        ],
+    )
+    def test_init(
+            self,
+            start_potential,
+            switch_potential,
+            reduction_potential,
+            reduction_potential2,
+            scan_rate,
+            c_bulk,
+            diffusion_reactant,
+            diffusion_intermediate,
+            diffusion_product,
+            alpha,
+            alpha2,
+            k0,
+            k0_2,
+            step_size,
+            disk_radius,
+            temperature,
+    ):
+        with pytest.raises(ValueError):
+            _ = EE(
+                start_potential=start_potential,
+                switch_potential=switch_potential,
+                reduction_potential=reduction_potential,
+                reduction_potential2=reduction_potential2,
+                scan_rate=scan_rate,
+                c_bulk=c_bulk,
+                diffusion_reactant=diffusion_reactant,
+                diffusion_intermediate=diffusion_intermediate,
+                diffusion_product=diffusion_product,
+                alpha=alpha,
+                alpha2=alpha2,
+                k0=k0,
+                k0_2=k0_2,
+                step_size=step_size,
+                disk_radius=disk_radius,
+                temperature=temperature,
+            )
+
+    @pytest.mark.parametrize(
+        "start_potential, "
+        "switch_potential, "
+        "reduction_potential, "
+        "reduction_potential2, "
+        "scan_rate, "
+        "c_bulk, "
+        "diffusion_reactant, "
+        "diffusion_intermediate, "
+        "diffusion_product, "
+        "alpha, "
+        "alpha2, "
+        "k0, "
+        "k0_2, "
+        "step_size, "
+        "disk_radius, "
+        "temperature, ",
+        [
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1e-3, 1, 1, 300),
+            (0.5, -0.4, 0, 0.1, 2, 1, 1e-6, 1e-6, 1e-6, 0.5, 0.5, 2e-3, 1e-3, 1, 1, 300),
+            (-1.0, 0.7, 0, 0.1, 5, 1, 1e-6, 1e-6, 1e-6, 0.6, 0.5, 1e-3, 2e-3, 1, 1, 300),
+        ],
+    )
+    def test_simulate(
+            self,
+            start_potential,
+            switch_potential,
+            reduction_potential,
+            reduction_potential2,
+            scan_rate,
+            c_bulk,
+            diffusion_reactant,
+            diffusion_intermediate,
+            diffusion_product,
+            alpha,
+            alpha2,
+            k0,
+            k0_2,
+            step_size,
+            disk_radius,
+            temperature,
+    ):
+        potential, current = EE(
+            start_potential=start_potential,
+            switch_potential=switch_potential,
+            reduction_potential=reduction_potential,
+            reduction_potential2=reduction_potential2,
+            scan_rate=scan_rate,
+            c_bulk=c_bulk,
+            diffusion_reactant=diffusion_reactant,
+            diffusion_intermediate=diffusion_intermediate,
+            diffusion_product=diffusion_product,
+            alpha=alpha,
+            alpha2=alpha2,
+            k0=k0,
+            k0_2=k0_2,
+            step_size=step_size,
+            disk_radius=disk_radius,
+            temperature=temperature,
+        ).simulate()
+        assert len(potential) == len(current)
+
+
+class TestSquareScheme:
+
+    @pytest.mark.parametrize(
+        "start_potential, "
+        "switch_potential, "
+        "reduction_potential, "
+        "reduction_potential2, "
+        "scan_rate, "
+        "c_bulk, "
+        "diffusion_reactant, "
+        "diffusion_product, "
+        "alpha, "
+        "alpha2, "
+        "k0, "
+        "k0_2, "
+        "k_forward, "
+        "k_backward, "
+        "k_forward2, "
+        "k_backward2, "
+        "step_size, "
+        "disk_radius, "
+        "temperature, ",
+        [
+            (-0.5, 0.4, 0, 0.1, 0, 1, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, 1, 1, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, -0.1, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, 1, 1, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, -0.5, 0.5, 1e-3, 1, 1, 1, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, -1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, 1, 1, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 0, 0.5, 0.5, 1e-3, 1, 1, 1, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, -1e-6, 0.5, 0.5, 1e-3, 1, 1, 1, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 1, 0.5, 1e-3, 1, 1, 1, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 0.5, 0.5, 0, 1, 1, 1, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 0.5, 0.5, 1e-3, -1.5, 1, 1, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 0, 1, 1, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 2, 1, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, 1, 1, 1, 1, -10, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, 1, 1, 1, 1, 1, 1, 0.0),
+            (0.4, 0.4, 0, 0.1, 3, 1, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, 1, 1, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 0.5, 0.5, 1e-3, -2, 1, 1, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, 1, 1, 1, 1, 0, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, 1, 1, 1, 1, 1, -0.5, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, -1, 1, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, 1, 1, -1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, 1, 0, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, 1, 1, 1, 0, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, 1, -2, 1, 1, 1, 1, 300),
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1, 1, 1, 1, -3, 1, 1, 300),
+        ],
+    )
+    def test_init(
+            self,
+            start_potential,
+            switch_potential,
+            reduction_potential,
+            reduction_potential2,
+            scan_rate,
+            c_bulk,
+            diffusion_reactant,
+            diffusion_product,
+            alpha,
+            alpha2,
+            k0,
+            k0_2,
+            k_forward,
+            k_backward,
+            k_forward2,
+            k_backward2,
+            step_size,
+            disk_radius,
+            temperature,
+    ):
+        with pytest.raises(ValueError):
+            _ = SquareScheme(
+                start_potential=start_potential,
+                switch_potential=switch_potential,
+                reduction_potential=reduction_potential,
+                reduction_potential2=reduction_potential2,
+                scan_rate=scan_rate,
+                c_bulk=c_bulk,
+                diffusion_reactant=diffusion_reactant,
+                diffusion_product=diffusion_product,
+                alpha=alpha,
+                alpha2=alpha2,
+                k0=k0,
+                k0_2=k0_2,
+                k_forward=k_forward,
+                k_backward=k_backward,
+                k_forward2=k_forward2,
+                k_backward2=k_backward2,
+                step_size=step_size,
+                disk_radius=disk_radius,
+                temperature=temperature,
+            )
+
+    @pytest.mark.parametrize(
+        "start_potential, "
+        "switch_potential, "
+        "reduction_potential, "
+        "reduction_potential2, "
+        "scan_rate, "
+        "c_bulk, "
+        "diffusion_reactant, "
+        "diffusion_product, "
+        "alpha, "
+        "alpha2, "
+        "k0, "
+        "k0_2, "
+        "k_forward, "
+        "k_backward, "
+        "k_forward2, "
+        "k_backward2, "
+        "step_size, "
+        "disk_radius, "
+        "temperature, ",
+        [
+            (-0.5, 0.4, 0, 0.1, 1, 1, 1e-6, 1e-6, 0.5, 0.5, 1e-3, 1e-3, 1, 1, 1, 1, 1, 1, 300),
+            (0.5, -0.4, 0, 0.1, 2, 1, 1e-6, 1e-6, 0.5, 0.5, 2e-3, 1e-3, 1, 1, 1, 1, 1, 1, 300),
+            (-1.0, 0.7, 0, 0.1, 5, 1, 1e-6, 1e-6, 0.6, 0.5, 1e-3, 2e-3, 1, 1, 1, 1, 1, 1, 300),
+        ],
+    )
+    def test_simulate(
+            self,
+            start_potential,
+            switch_potential,
+            reduction_potential,
+            reduction_potential2,
+            scan_rate,
+            c_bulk,
+            diffusion_reactant,
+            diffusion_product,
+            alpha,
+            alpha2,
+            k0,
+            k0_2,
+            k_forward,
+            k_backward,
+            k_forward2,
+            k_backward2,
+            step_size,
+            disk_radius,
+            temperature,
+    ):
+        potential, current = SquareScheme(
+            start_potential=start_potential,
+            switch_potential=switch_potential,
+            reduction_potential=reduction_potential,
+            reduction_potential2=reduction_potential2,
+            scan_rate=scan_rate,
+            c_bulk=c_bulk,
+            diffusion_reactant=diffusion_reactant,
+            diffusion_product=diffusion_product,
+            alpha=alpha,
+            alpha2=alpha2,
+            k0=k0,
+            k0_2=k0_2,
+            k_forward=k_forward,
+            k_backward=k_backward,
+            k_forward2=k_forward2,
+            k_backward2=k_backward2,
+            step_size=step_size,
+            disk_radius=disk_radius,
+            temperature=temperature,
+        ).simulate()
+        assert len(potential) == len(current)
