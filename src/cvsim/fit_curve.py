@@ -175,7 +175,7 @@ class FitMechanism(ABC):
     def _scheme(self, get_var: Callable[[str], float]) -> CyclicVoltammetryScheme:
         raise NotImplementedError
 
-    def _fit(self, fit_vars: dict[str, _ParamGuess]) -> tuple[np.ndarray, np.ndarray]:
+    def _fit(self, fit_vars: dict[str, _ParamGuess]) -> tuple[np.ndarray, np.ndarray, dict]:
         fit_vars = self._non_none_dict(fit_vars)
         fixed_vars = self._non_none_dict(self.fixed_vars)
 
@@ -199,7 +199,7 @@ class FitMechanism(ABC):
         for param, (initial, lower, upper) in fit_default_vars.items():
             if not lower < initial < upper:
                 # check if default initial guess is outside bounds, set guess to avg of bounds
-                # not useful if spans many order of magnitudes, use logarithmic mean? possible todo
+                # not useful if spans many order of magnitudes, could use logarithmic mean
                 fit_default_vars[param] = [(lower + upper) / 2, lower, upper]
                 # check if user's guess was outside bounds
                 if initial != self.default_vars[param][0]:
@@ -241,20 +241,22 @@ class FitMechanism(ABC):
             p0=initial_guesses,
             bounds=[lower_bounds, upper_bounds],
         )
-        # TODO: return the optimal parameters, transform popt from an array into a dict keyed by fitting param name?
+
         popt, pcov = list(fit_results)
         current_fit = fit_function(self.voltage_to_fit, *popt)
         sigma = np.sqrt(np.diag(pcov))  # one standard deviation of the parameters
 
+        final_fit = {}
         for val, error, param in zip(popt, sigma, fitting_params):
+            final_fit[param] = val
             print(f"Final fit: '{param}': {val:.2E} +/- {error:.0E}")
-        print(f"Ill-conditioned if large: {np.linalg.cond(pcov)}")  # remove
+        print(f"Ill-conditioned if large: {np.linalg.cond(pcov)}")  # remove?
 
         # Semi-analytical method does not compute the first point (i.e. time=0)
         # so the starting voltage data point with a zero current is reinserted
         self.voltage_to_fit = np.insert(self.voltage_to_fit, 0, self.start_potential)
         current_fit = np.insert(current_fit, 0, 0)
-        return self.voltage_to_fit, current_fit
+        return self.voltage_to_fit, current_fit, final_fit
 
 
 class FitE_rev(FitMechanism):
@@ -279,7 +281,7 @@ class FitE_rev(FitMechanism):
             reduction_potential: _ParamGuess = None,
             diffusion_reactant: _ParamGuess = None,
             diffusion_product: _ParamGuess = None,
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, dict]:
         """
         Fits the CV for a reversible (Nernstian) one electron transfer mechanism.
         If a parameter is given, it must be a: float for initial guess of parameter; tuple[float, float] for
@@ -304,6 +306,8 @@ class FitE_rev(FitMechanism):
             Array of potential (V) values of the CV fit.
         current_fit : np.ndarray
             Array of current (A) values of the CV fit.
+        final_fit : dict
+            Dictionary of final fitting parameter values of the CV fit.
 
         """
 
@@ -347,7 +351,7 @@ class FitE_q(FitMechanism):
     alpha : float | None
         Charge transfer coefficient (no units).
         If known, can be fixed value, otherwise defaults to None.
-    k_0 : float | None
+    k0 : float | None
         Standard electrochemical rate constant (cm/s).
         If known, can be fixed value, otherwise defaults to None.
 
@@ -366,7 +370,7 @@ class FitE_q(FitMechanism):
             diffusion_reactant: float | None = None,
             diffusion_product: float | None = None,
             alpha: float | None = None,
-            k_0: float | None = None,
+            k0: float | None = None,
     ) -> None:
         super().__init__(
             voltage_to_fit,
@@ -382,20 +386,20 @@ class FitE_q(FitMechanism):
         )
 
         self._ensure_open_unit_interval_or_none('alpha', alpha)
-        self._ensure_positive_or_none('k_0', k_0)
+        self._ensure_positive_or_none('k0', k0)
 
         self.alpha = alpha
-        self.k_0 = k_0
+        self.k0 = k0
 
         self.fixed_vars |= {
             'alpha': alpha,
-            'k_0': k_0,
+            'k0': k0,
         }
 
         # default [initial guess, lower bound, upper bound]
         self.default_vars |= {
             'alpha': [0.5, 0.01, 0.99],
-            'k_0': [1e-5, 1e-8, 1e-3],
+            'k0': [1e-5, 1e-8, 1e-3],
         }
 
     def _scheme(self, get_var: Callable[[str], float]) -> CyclicVoltammetryScheme:
@@ -408,7 +412,7 @@ class FitE_q(FitMechanism):
             diffusion_reactant=get_var('diffusion_reactant'),
             diffusion_product=get_var('diffusion_product'),
             alpha=get_var('alpha'),
-            k_0=get_var('k_0'),
+            k0=get_var('k0'),
             step_size=self.step_size,
             disk_radius=self.disk_radius,
             temperature=self.temperature,
@@ -420,8 +424,8 @@ class FitE_q(FitMechanism):
             diffusion_reactant: _ParamGuess = None,
             diffusion_product: _ParamGuess = None,
             alpha: _ParamGuess = None,
-            k_0: _ParamGuess = None,
-    ) -> tuple[np.ndarray, np.ndarray]:
+            k0: _ParamGuess = None,
+    ) -> tuple[np.ndarray, np.ndarray, dict]:
         """
         Fits the CV for a quasi-reversible one electron transfer mechanism.
         If a parameter is given, it must be a: float for initial guess of parameter; tuple[float, float] for
@@ -442,7 +446,7 @@ class FitE_q(FitMechanism):
         alpha : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the charge transfer coefficient (no units).
             Defaults to None.
-        k_0 : None | float | tuple[float, float] | tuple[float, float, float]
+        k0 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the standard electrochemical rate constant (cm/s).
             Defaults to None.
 
@@ -452,6 +456,8 @@ class FitE_q(FitMechanism):
             Array of potential (V) values of the CV fit.
         current_fit : np.ndarray
             Array of current (A) values of the CV fit.
+        final_fit : dict
+            Dictionary of final fitting parameter values of the CV fit.
 
         """
         return self._fit({
@@ -459,7 +465,7 @@ class FitE_q(FitMechanism):
             'diffusion_reactant': diffusion_reactant,
             'diffusion_product': diffusion_product,
             'alpha': alpha,
-            'k_0': k_0,
+            'k0': k0,
         })
 
 
@@ -497,7 +503,7 @@ class FitE_qC(FitMechanism):
     alpha : float | None
         Charge transfer coefficient (no units).
         If known, can be fixed value, otherwise defaults to None.
-    k_0 : float | None
+    k0 : float | None
         Standard electrochemical rate constant (cm/s).
         If known, can be fixed value, otherwise defaults to None.
     k_forward : float | None
@@ -522,7 +528,7 @@ class FitE_qC(FitMechanism):
             diffusion_reactant: float | None = None,
             diffusion_product: float | None = None,
             alpha: float | None = None,
-            k_0: float | None = None,
+            k0: float | None = None,
             k_forward: float | None = None,
             k_backward: float | None = None,
     ) -> None:
@@ -540,18 +546,18 @@ class FitE_qC(FitMechanism):
         )
 
         self._ensure_open_unit_interval_or_none('alpha', alpha)
-        self._ensure_positive_or_none('k_0', k_0)
+        self._ensure_positive_or_none('k0', k0)
         self._ensure_positive_or_none('k_forward', k_forward)
         self._ensure_positive_or_none('k_backward', k_backward)
 
         self.alpha = alpha
-        self.k_0 = k_0
+        self.k0 = k0
         self.k_forward = k_forward
         self.k_backward = k_backward
 
         self.fixed_vars |= {
             'alpha': alpha,
-            'k_0': k_0,
+            'k0': k0,
             'k_forward': k_forward,
             'k_backward': k_backward,
         }
@@ -559,7 +565,7 @@ class FitE_qC(FitMechanism):
         # default [initial guess, lower bound, upper bound]
         self.default_vars |= {
             'alpha': [0.5, 0.01, 0.99],
-            'k_0': [1e-5, 1e-8, 1e-3],
+            'k0': [1e-5, 1e-8, 1e-3],
             'k_forward': [1e-3, 1e-8, 1e3],
             'k_backward': [1e-3, 1e-8, 1e3],
         }
@@ -574,7 +580,7 @@ class FitE_qC(FitMechanism):
             diffusion_reactant=get_var('diffusion_reactant'),
             diffusion_product=get_var('diffusion_product'),
             alpha=get_var('alpha'),
-            k_0=get_var('k_0'),
+            k0=get_var('k0'),
             k_forward=get_var('k_forward'),
             k_backward=get_var('k_backward'),
             step_size=self.step_size,
@@ -588,10 +594,10 @@ class FitE_qC(FitMechanism):
             diffusion_reactant: _ParamGuess = None,
             diffusion_product: _ParamGuess = None,
             alpha: _ParamGuess = None,
-            k_0: _ParamGuess = None,
+            k0: _ParamGuess = None,
             k_forward: _ParamGuess = None,
             k_backward: _ParamGuess = None,
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, dict]:
         """
         Fits the CV for a quasi-reversible one electron transfer, followed by a reversible first
         order homogeneous chemical transformation mechanism.
@@ -613,7 +619,7 @@ class FitE_qC(FitMechanism):
         alpha : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the charge transfer coefficient (no units).
             Defaults to None.
-        k_0 : None | float | tuple[float, float] | tuple[float, float, float]
+        k0 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the standard electrochemical rate constant (cm/s).
             Defaults to None.
         k_forward : None | float | tuple[float, float] | tuple[float, float, float]
@@ -629,6 +635,8 @@ class FitE_qC(FitMechanism):
             Array of potential (V) values of the CV fit.
         current_fit : np.ndarray
             Array of current (A) values of the CV fit.
+        final_fit : dict
+            Dictionary of final fitting parameter values of the CV fit.
 
         """
         return self._fit({
@@ -636,7 +644,7 @@ class FitE_qC(FitMechanism):
             'diffusion_reactant': diffusion_reactant,
             'diffusion_product': diffusion_product,
             'alpha': alpha,
-            'k_0': k_0,
+            'k0': k0,
             'k_forward': k_forward,
             'k_backward': k_backward,
         })
@@ -665,7 +673,7 @@ class FitEE(FitMechanism):
     reduction_potential : float | None
         Reduction potential of the first one-electron transfer process (V vs. reference).
         If known, can be fixed value, otherwise defaults to None.
-    second_reduction_potential : float | None
+    reduction_potential2 : float | None
         Reduction potential of the second one-electron transfer process (V vs. reference).
         If known, can be fixed value, otherwise defaults to None.
     diffusion_reactant : float | None
@@ -680,13 +688,13 @@ class FitEE(FitMechanism):
     alpha : float | None
         Charge transfer coefficient of first redox process (no units).
         If known, can be fixed value, otherwise defaults to None.
-    second_alpha : float | None
+    alpha2 : float | None
         Charge transfer coefficient of second redox process (no units).
         If known, can be fixed value, otherwise defaults to None.
-    k_0 : float | None
+    k0 : float | None
         Standard electrochemical rate constant of first redox process (cm/s).
         If known, can be fixed value, otherwise defaults to None.
-    second_k_0 : float | None
+    k0_2 : float | None
         Standard electrochemical rate constant of second redox process (cm/s).
         If known, can be fixed value, otherwise defaults to None.
 
@@ -702,14 +710,14 @@ class FitEE(FitMechanism):
             disk_radius: float,
             temperature: float = 298.0,
             reduction_potential: float | None = None,
-            second_reduction_potential: float | None = None,
+            reduction_potential2: float | None = None,
             diffusion_reactant: float | None = None,
             diffusion_intermediate: float | None = None,
             diffusion_product: float | None = None,
             alpha: float | None = None,
-            second_alpha: float | None = None,
-            k_0: float | None = None,
-            second_k_0: float | None = None,
+            alpha2: float | None = None,
+            k0: float | None = None,
+            k0_2: float | None = None,
     ) -> None:
         super().__init__(
             voltage_to_fit,
@@ -726,29 +734,29 @@ class FitEE(FitMechanism):
 
         self._ensure_positive_or_none('diffusion_intermediate', diffusion_intermediate)
         self._ensure_open_unit_interval_or_none('alpha', alpha)
-        self._ensure_open_unit_interval_or_none('second_alpha', second_alpha)
-        self._ensure_positive_or_none('k_0', k_0)
-        self._ensure_positive_or_none('second_k_0', second_k_0)
+        self._ensure_open_unit_interval_or_none('alpha2', alpha2)
+        self._ensure_positive_or_none('k0', k0)
+        self._ensure_positive_or_none('k0_2', k0_2)
 
-        self.second_reduction_potential = second_reduction_potential
+        self.reduction_potential2 = reduction_potential2
         self.diffusion_intermediate = diffusion_intermediate
         self.alpha = alpha
-        self.second_alpha = second_alpha
-        self.k_0 = k_0
-        self.second_k_0 = second_k_0
+        self.alpha2 = alpha2
+        self.k0 = k0
+        self.k0_2 = k0_2
 
         self.fixed_vars |= {
-            'second_reduction_potential': second_reduction_potential,
+            'reduction_potential2': reduction_potential2,
             'diffusion_intermediate': diffusion_intermediate,
             'alpha': alpha,
-            'second_alpha': second_alpha,
-            'k_0': k_0,
-            'second_k_0': second_k_0,
+            'alpha2': alpha2,
+            'k0': k0,
+            'k0_2': k0_2,
         }
 
         # default [initial guess, lower bound, upper bound]
         self.default_vars |= {
-            'second_reduction_potential': [  # TODO need to think about this
+            'reduction_potential2': [
                 round((self.voltage_to_fit[np.argmax(self.current_to_fit)]
                        + self.voltage_to_fit[np.argmin(self.current_to_fit)]) / 2, 3),
                 min(self.start_potential, self.switch_potential),
@@ -756,9 +764,9 @@ class FitEE(FitMechanism):
             ],
             'diffusion_intermediate': [1e-6, 5e-8, 1e-4],
             'alpha': [0.5, 0.01, 0.99],
-            'second_alpha': [0.5, 0.01, 0.99],
-            'k_0': [1e-5, 1e-8, 1e-3],
-            'second_k_0': [1e-5, 1e-8, 1e-3],
+            'alpha2': [0.5, 0.01, 0.99],
+            'k0': [1e-5, 1e-8, 1e-3],
+            'k0_2': [1e-5, 1e-8, 1e-3],
         }
 
     def _scheme(self, get_var: Callable[[str], float]) -> CyclicVoltammetryScheme:
@@ -766,16 +774,16 @@ class FitEE(FitMechanism):
             start_potential=self.start_potential,
             switch_potential=self.switch_potential,
             reduction_potential=get_var('reduction_potential'),
-            second_reduction_potential=get_var('second_reduction_potential'),
+            reduction_potential2=get_var('reduction_potential2'),
             scan_rate=self.scan_rate,
             c_bulk=self.c_bulk,
             diffusion_reactant=get_var('diffusion_reactant'),
             diffusion_intermediate=get_var('diffusion_intermediate'),
             diffusion_product=get_var('diffusion_product'),
             alpha=get_var('alpha'),
-            second_alpha=get_var('second_alpha'),
-            k_0=get_var('k_0'),
-            second_k_0=get_var('second_k_0'),
+            alpha2=get_var('alpha2'),
+            k0=get_var('k0'),
+            k0_2=get_var('k0_2'),
             step_size=self.step_size,
             disk_radius=self.disk_radius,
             temperature=self.temperature,
@@ -784,15 +792,15 @@ class FitEE(FitMechanism):
     def fit(
             self,
             reduction_potential: _ParamGuess = None,
-            second_reduction_potential: _ParamGuess = None,
+            reduction_potential2: _ParamGuess = None,
             diffusion_reactant: _ParamGuess = None,
             diffusion_intermediate: _ParamGuess = None,
             diffusion_product: _ParamGuess = None,
             alpha: _ParamGuess = None,
-            second_alpha: _ParamGuess = None,
-            k_0: _ParamGuess = None,
-            second_k_0: _ParamGuess = None,
-    ) -> tuple[np.ndarray, np.ndarray]:
+            alpha2: _ParamGuess = None,
+            k0: _ParamGuess = None,
+            k0_2: _ParamGuess = None,
+    ) -> tuple[np.ndarray, np.ndarray, dict]:
         """
         Fits the CV for a two successive one-electron quasi-reversible transfer mechanism.
         If a parameter is given, it must be a: float for initial guess of parameter; tuple[float, float] for
@@ -804,7 +812,7 @@ class FitEE(FitMechanism):
         reduction_potential : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the reduction potential of the first one-electron transfer process (V vs. reference).
             Defaults to None.
-        second_reduction_potential : None | float | tuple[float, float] | tuple[float, float, float]
+        reduction_potential2 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the reduction potential of the second one-electron transfer process (V vs. reference).
             Defaults to None.
         diffusion_reactant : None | float | tuple[float, float] | tuple[float, float, float]
@@ -817,15 +825,15 @@ class FitEE(FitMechanism):
             Optional guess for the diffusion coefficient of product (cm^2/s).
             Defaults to None.
         alpha : None | float | tuple[float, float] | tuple[float, float, float]
+            Optional guess for the charge transfer coefficient of the first redox process (no units).
+            Defaults to None.
+        alpha2 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the charge transfer coefficient of the second redox process (no units).
             Defaults to None.
-        second_alpha : None | float | tuple[float, float] | tuple[float, float, float]
-            Optional guess for the charge transfer coefficient of the second redox process (no units).
-            Defaults to None.
-        k_0 : None | float | tuple[float, float] | tuple[float, float, float]
+        k0 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the standard electrochemical rate constant of the first redox process (cm/s).
             Defaults to None.
-        second_k_0 : None | float | tuple[float, float] | tuple[float, float, float]
+        k0_2 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the standard electrochemical rate constant of the second redox process (cm/s).
             Defaults to None.
 
@@ -835,19 +843,21 @@ class FitEE(FitMechanism):
             Array of potential (V) values of the CV fit.
         current_fit : np.ndarray
             Array of current (A) values of the CV fit.
+        final_fit : dict
+            Dictionary of final fitting parameter values of the CV fit.
 
         """
 
         return self._fit({
             'reduction_potential': reduction_potential,
-            'second_reduction_potential': second_reduction_potential,
+            'reduction_potential2': reduction_potential2,
             'diffusion_reactant': diffusion_reactant,
             'diffusion_intermediate': diffusion_intermediate,
             'diffusion_product': diffusion_product,
             'alpha': alpha,
-            'second_alpha': second_alpha,
-            'k_0': k_0,
-            'second_k_0': second_k_0,
+            'alpha2': alpha2,
+            'k0': k0,
+            'k0_2': k0_2,
         })
 
 
@@ -876,7 +886,7 @@ class FitSquareScheme(FitMechanism):
     reduction_potential : float | None
         Reduction potential of the first one-electron transfer process (V vs. reference).
         If known, can be fixed value, otherwise defaults to None.
-    second_reduction_potential : float | None
+    reduction_potential2 : float | None
         Reduction potential of the second one-electron transfer process (V vs. reference).
         If known, can be fixed value, otherwise defaults to None.
     diffusion_reactant : float | None
@@ -888,13 +898,13 @@ class FitSquareScheme(FitMechanism):
     alpha : float | None
         Charge transfer coefficient of first redox process (no units).
         If known, can be fixed value, otherwise defaults to None.
-    second_alpha : float | None
+    alpha2 : float | None
         Charge transfer coefficient of second redox process (no units).
         If known, can be fixed value, otherwise defaults to None.
-    k_0 : float | None
+    k0 : float | None
         Standard electrochemical rate constant of first redox process (cm/s).
         If known, can be fixed value, otherwise defaults to None.
-    second_k_0 : float | None
+    k0_2 : float | None
         Standard electrochemical rate constant of second redox process (cm/s).
         If known, can be fixed value, otherwise defaults to None.
     k_forward : float | None
@@ -903,10 +913,10 @@ class FitSquareScheme(FitMechanism):
     k_backward : float | None
         First order backward chemical rate constant for first redox species (1/s).
         If known, can be fixed value, otherwise defaults to None.
-    second_k_forward : float | None
+    k_forward2 : float | None
         First order forward chemical rate constant for second redox species (1/s).
         If known, can be fixed value, otherwise defaults to None.
-    second_k_backward : float | None
+    k_backward2 : float | None
         First order backward chemical rate constant for second redox species (1/s).
         If known, can be fixed value, otherwise defaults to None.
 
@@ -922,17 +932,17 @@ class FitSquareScheme(FitMechanism):
             disk_radius: float,
             temperature: float = 298.0,
             reduction_potential: float | None = None,
-            second_reduction_potential: float | None = None,
+            reduction_potential2: float | None = None,
             diffusion_reactant: float | None = None,
             diffusion_product: float | None = None,
             alpha: float | None = None,
-            second_alpha: float | None = None,
-            k_0: float | None = None,
-            second_k_0: float | None = None,
+            alpha2: float | None = None,
+            k0: float | None = None,
+            k0_2: float | None = None,
             k_forward: float | None = None,
             k_backward: float | None = None,
-            second_k_forward: float | None = None,
-            second_k_backward: float | None = None,
+            k_forward2: float | None = None,
+            k_backward2: float | None = None,
     ) -> None:
         super().__init__(
             voltage_to_fit,
@@ -948,52 +958,52 @@ class FitSquareScheme(FitMechanism):
         )
 
         self._ensure_open_unit_interval_or_none('alpha', alpha)
-        self._ensure_open_unit_interval_or_none('second_alpha', second_alpha)
-        self._ensure_positive_or_none('k_0', k_0)
-        self._ensure_positive_or_none('second_k_0', second_k_0)
+        self._ensure_open_unit_interval_or_none('alpha2', alpha2)
+        self._ensure_positive_or_none('k0', k0)
+        self._ensure_positive_or_none('k0_2', k0_2)
         self._ensure_positive_or_none('k_forward', k_forward)
         self._ensure_positive_or_none('k_backward', k_backward)
-        self._ensure_positive_or_none('second_k_forward', second_k_forward)
-        self._ensure_positive_or_none('second_k_backward', second_k_backward)
+        self._ensure_positive_or_none('k_forward2', k_forward2)
+        self._ensure_positive_or_none('k_backward2', k_backward2)
 
-        self.second_reduction_potential = second_reduction_potential
+        self.reduction_potential2 = reduction_potential2
         self.alpha = alpha
-        self.second_alpha = second_alpha
-        self.k_0 = k_0
-        self.second_k_0 = second_k_0
+        self.alpha2 = alpha2
+        self.k0 = k0
+        self.k0_2 = k0_2
         self.k_forward = k_forward
         self.k_backward = k_backward
-        self.second_k_forward = second_k_forward
-        self.second_k_backward = second_k_backward
+        self.k_forward2 = k_forward2
+        self.k_backward2 = k_backward2
 
         self.fixed_vars |= {
-            'second_reduction_potential': second_reduction_potential,
+            'reduction_potential2': reduction_potential2,
             'alpha': alpha,
-            'second_alpha': second_alpha,
-            'k_0': k_0,
-            'second_k_0': second_k_0,
+            'alpha2': alpha2,
+            'k0': k0,
+            'k0_2': k0_2,
             'k_forward': k_forward,
             'k_backward': k_backward,
-            'second_k_forward': second_k_forward,
-            'second_k_backward': second_k_backward,
+            'k_forward2': k_forward2,
+            'k_backward2': k_backward2,
         }
 
         # default [initial guess, lower bound, upper bound]
         self.default_vars |= {
-            'second_reduction_potential': [  # TODO need to think about this
+            'reduction_potential2': [
                 round((self.voltage_to_fit[np.argmax(self.current_to_fit)]
                        + self.voltage_to_fit[np.argmin(self.current_to_fit)]) / 2, 3),
                 min(self.start_potential, self.switch_potential),
                 max(self.start_potential, self.switch_potential),
             ],
             'alpha': [0.5, 0.01, 0.99],
-            'second_alpha': [0.5, 0.01, 0.99],
-            'k_0': [1e-5, 1e-8, 1e-3],
-            'second_k_0': [1e-5, 1e-8, 1e-3],
-            'k_forward': [1e-1, 5e-4, 1e3],  # TODO bounds might be too restrictive
+            'alpha2': [0.5, 0.01, 0.99],
+            'k0': [1e-5, 1e-8, 1e-3],
+            'k0_2': [1e-5, 1e-8, 1e-3],
+            'k_forward': [1e-1, 5e-4, 1e3],
             'k_backward': [1e-1, 5e-4, 1e3],
-            'second_k_forward': [1e-1, 5e-4, 1e3],
-            'second_k_backward': [1e-1, 5e-4, 1e3],
+            'k_forward2': [1e-1, 5e-4, 1e3],
+            'k_backward2': [1e-1, 5e-4, 1e3],
         }
 
     def _scheme(self, get_var: Callable[[str], float]) -> CyclicVoltammetryScheme:
@@ -1001,19 +1011,19 @@ class FitSquareScheme(FitMechanism):
             start_potential=self.start_potential,
             switch_potential=self.switch_potential,
             reduction_potential=get_var('reduction_potential'),
-            second_reduction_potential=get_var('second_reduction_potential'),
+            reduction_potential2=get_var('reduction_potential2'),
             scan_rate=self.scan_rate,
             c_bulk=self.c_bulk,
             diffusion_reactant=get_var('diffusion_reactant'),
             diffusion_product=get_var('diffusion_product'),
             alpha=get_var('alpha'),
-            second_alpha=get_var('second_alpha'),
-            k_0=get_var('k_0'),
-            second_k_0=get_var('second_k_0'),
+            alpha2=get_var('alpha2'),
+            k0=get_var('k0'),
+            k0_2=get_var('k0_2'),
             k_forward=get_var('k_forward'),
             k_backward=get_var('k_backward'),
-            second_k_forward=get_var('second_k_forward'),
-            second_k_backward=get_var('second_k_backward'),
+            k_forward2=get_var('k_forward2'),
+            k_backward2=get_var('k_backward2'),
             step_size=self.step_size,
             disk_radius=self.disk_radius,
             temperature=self.temperature,
@@ -1022,18 +1032,18 @@ class FitSquareScheme(FitMechanism):
     def fit(
             self,
             reduction_potential: _ParamGuess = None,
-            second_reduction_potential: _ParamGuess = None,
+            reduction_potential2: _ParamGuess = None,
             diffusion_reactant: _ParamGuess = None,
             diffusion_product: _ParamGuess = None,
             alpha: _ParamGuess = None,
-            second_alpha: _ParamGuess = None,
-            k_0: _ParamGuess = None,
-            second_k_0: _ParamGuess = None,
+            alpha2: _ParamGuess = None,
+            k0: _ParamGuess = None,
+            k0_2: _ParamGuess = None,
             k_forward: _ParamGuess = None,
             k_backward: _ParamGuess = None,
-            second_k_forward: _ParamGuess = None,
-            second_k_backward: _ParamGuess = None,
-    ) -> tuple[np.ndarray, np.ndarray]:
+            k_forward2: _ParamGuess = None,
+            k_backward2: _ParamGuess = None,
+    ) -> tuple[np.ndarray, np.ndarray, dict]:
         """
         Fits the CV for a Square Scheme mechanism.
         If a parameter is given, it must be a: float for initial guess of parameter; tuple[float, float] for
@@ -1045,7 +1055,7 @@ class FitSquareScheme(FitMechanism):
         reduction_potential : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the reduction potential of the first one-electron transfer process (V vs. reference).
             Defaults to None.
-        second_reduction_potential : None | float | tuple[float, float] | tuple[float, float, float]
+        reduction_potential2 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the reduction potential of the second one-electron transfer process (V vs. reference).
             Defaults to None.
         diffusion_reactant : None | float | tuple[float, float] | tuple[float, float, float]
@@ -1057,13 +1067,13 @@ class FitSquareScheme(FitMechanism):
         alpha : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the charge transfer coefficient of the first redox process (no units).
             Defaults to None.
-        second_alpha : None | float | tuple[float, float] | tuple[float, float, float]
+        alpha2 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the charge transfer coefficient of the second redox process (no units).
             Defaults to None.
-        k_0 : None | float | tuple[float, float] | tuple[float, float, float]
+        k0 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the standard electrochemical rate constant of the first redox process (cm/s).
             Defaults to None.
-        second_k_0 : None | float | tuple[float, float] | tuple[float, float, float]
+        k0_2 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the standard electrochemical rate constant of the second redox process (cm/s).
             Defaults to None.
         k_forward : None | float | tuple[float, float] | tuple[float, float, float]
@@ -1072,10 +1082,10 @@ class FitSquareScheme(FitMechanism):
         k_backward : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the first order backward chemical rate constant for the first redox species (1/s).
             Defaults to None.
-        second_k_forward : None | float | tuple[float, float] | tuple[float, float, float]
+        k_forward2 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the first order forward chemical rate constant for the second redox species (1/s).
             Defaults to None.
-        second_k_backward : None | float | tuple[float, float] | tuple[float, float, float]
+        k_backward2 : None | float | tuple[float, float] | tuple[float, float, float]
             Optional guess for the first order backward chemical rate constant for the second redox species (1/s).
             Defaults to None.
 
@@ -1085,20 +1095,22 @@ class FitSquareScheme(FitMechanism):
             Array of potential (V) values of the CV fit.
         current_fit : np.ndarray
             Array of current (A) values of the CV fit.
+        final_fit : dict
+            Dictionary of final fitting parameter values of the CV fit.
 
         """
 
         return self._fit({
             'reduction_potential': reduction_potential,
-            'second_reduction_potential': second_reduction_potential,
+            'reduction_potential2': reduction_potential2,
             'diffusion_reactant': diffusion_reactant,
             'diffusion_product': diffusion_product,
             'alpha': alpha,
-            'second_alpha': second_alpha,
-            'k_0': k_0,
-            'second_k_0': second_k_0,
+            'alpha2': alpha2,
+            'k0': k0,
+            'k0_2': k0_2,
             'k_forward': k_forward,
             'k_backward': k_backward,
-            'second_k_forward': second_k_forward,
-            'second_k_backward': second_k_backward,
+            'k_forward2': k_forward2,
+            'k_backward2': k_backward2,
         })
