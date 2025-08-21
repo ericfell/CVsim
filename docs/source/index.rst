@@ -36,7 +36,8 @@ cvsim.py requires:
 Examples and Documentation
 ---------------------------
 
-See....
+See :doc:`./getting-started` for instructions
+on getting started with CV simulations.
 
 
 
@@ -44,8 +45,10 @@ See....
    :maxdepth: 2
    :caption: Contents
 
+   getting-started
    mechanisms
    fit_curve
+   faq
 
 
 
