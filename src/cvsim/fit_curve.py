@@ -250,7 +250,6 @@ class FitMechanism(ABC):
         for val, error, param in zip(popt, sigma, fitting_params):
             final_fit[param] = val
             print(f"Final fit: '{param}': {val:.2E} +/- {error:.0E}")
-        print(f"Ill-conditioned if large: {np.linalg.cond(pcov)}")  # remove?
 
         # Semi-analytical method does not compute the first point (i.e. time=0)
         # so the starting voltage data point with a zero current is reinserted
