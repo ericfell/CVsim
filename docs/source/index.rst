@@ -6,10 +6,10 @@
 cvsim.py
 ===================
 
-:code:`cvsim.py` is a Python package for simulating cyclic voltammograms on a disk macroelectrode,
+:code:`cvsim.py` is a Python package for simulating cyclic voltammograms (CV) on a disk macroelectrode,
 via a semi-analytical method.
 
-This package contains .......
+This package contains modules to simulate CV of different (electro)chemical mechanisms and to fit experimental CV according to these mechanisms.
 
 
 If you have a feature request or find a bug, please
