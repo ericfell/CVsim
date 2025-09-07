@@ -107,7 +107,7 @@ class FitMechanism(ABC):
         thetas = [round((i - delta_theta)) for i in [start_potential_mv, switch_potential_mv]]
         forward_scan = np.arange(thetas[0], thetas[1], step=delta_theta * -1)
         reverse_scan = np.append(forward_scan[-2::-1], start_potential_mv)
-        self.voltage_to_fit = np.concatenate([forward_scan, reverse_scan]) / 1000
+        self.voltage = np.concatenate([forward_scan, reverse_scan]) / 1000
 
         # Contains only variables with a user-specified fixed value.
         # These params are shared by all CVsim mechanisms
@@ -121,8 +121,8 @@ class FitMechanism(ABC):
         # These params are shared by all CVsim mechanisms
         self.default_vars = {
             'reduction_potential': [
-                round((self.voltage_to_fit[np.argmax(self.current_to_fit)]
-                       + self.voltage_to_fit[np.argmin(self.current_to_fit)]) / 2, 3),
+                round((self.voltage[np.argmax(self.current_to_fit)]
+                       + self.voltage[np.argmin(self.current_to_fit)]) / 2, 3),
                 min(self.start_potential, self.switch_potential),
                 max(self.start_potential, self.switch_potential),
             ],
@@ -236,14 +236,14 @@ class FitMechanism(ABC):
         # fit raw data but exclude first data point, as semi-analytical method skips time=0
         fit_results = curve_fit(
             f=fit_function,
-            xdata=self.voltage_to_fit,
+            xdata=self.voltage,
             ydata=self.current_to_fit[1:],
             p0=initial_guesses,
             bounds=[lower_bounds, upper_bounds],
         )
 
         popt, pcov = list(fit_results)
-        current_fit = fit_function(self.voltage_to_fit, *popt)
+        current_fit = fit_function(self.voltage, *popt)
         sigma = np.sqrt(np.diag(pcov))  # one standard deviation of the parameters
 
         final_fit = {}
@@ -253,13 +253,13 @@ class FitMechanism(ABC):
 
         # Semi-analytical method does not compute the first point (i.e. time=0)
         # so the starting voltage data point with a zero current is reinserted
-        self.voltage_to_fit = np.insert(self.voltage_to_fit, 0, self.start_potential)
+        self.voltage = np.insert(self.voltage, 0, self.start_potential)
         current_fit = np.insert(current_fit, 0, 0)
-        return self.voltage_to_fit, current_fit, final_fit
+        return self.voltage, current_fit, final_fit
 
 
 class FitE_rev(FitMechanism):
-    """Scheme for fitting a CV for a reversible (Nernstian) one electron transfer mechanism."""
+    """Scheme for fitting a CV for a reversible (Nernstian) one-electron transfer mechanism."""
 
     def _scheme(self, get_var: Callable[[str], float]) -> CyclicVoltammetryScheme:
         return E_rev(
@@ -282,7 +282,7 @@ class FitE_rev(FitMechanism):
             diffusion_product: _ParamGuess = None,
     ) -> tuple[np.ndarray, np.ndarray, dict]:
         """
-        Fits the CV for a reversible (Nernstian) one electron transfer mechanism.
+        Fits the CV for a reversible (Nernstian) one-electron transfer mechanism.
         If a parameter is given, it must be a: float for initial guess of parameter; tuple[float, float] for
         (lower bound, upper bound) of the initial guess; or tuple[float, float, float] for
         (initial guess, lower bound, upper bound).
@@ -301,7 +301,7 @@ class FitE_rev(FitMechanism):
 
         Returns
         -------
-        voltage_to_fit : np.ndarray
+        voltage : np.ndarray
             Array of potential (V) values of the CV fit.
         current_fit : np.ndarray
             Array of current (A) values of the CV fit.
@@ -319,7 +319,7 @@ class FitE_rev(FitMechanism):
 
 class FitE_q(FitMechanism):
     """
-    Scheme for fitting a CV for a quasi-reversible one electron transfer mechanism.
+    Scheme for fitting a CV for a quasi-reversible one-electron transfer mechanism.
 
     Parameters
     ----------
@@ -426,7 +426,7 @@ class FitE_q(FitMechanism):
             k0: _ParamGuess = None,
     ) -> tuple[np.ndarray, np.ndarray, dict]:
         """
-        Fits the CV for a quasi-reversible one electron transfer mechanism.
+        Fits the CV for a quasi-reversible one-electron transfer mechanism.
         If a parameter is given, it must be a: float for initial guess of parameter; tuple[float, float] for
         (lower bound, upper bound) of the initial guess; or tuple[float, float, float] for
         (initial guess, lower bound, upper bound).
@@ -451,7 +451,7 @@ class FitE_q(FitMechanism):
 
         Returns
         -------
-        voltage_to_fit : np.ndarray
+        voltage : np.ndarray
             Array of potential (V) values of the CV fit.
         current_fit : np.ndarray
             Array of current (A) values of the CV fit.
@@ -470,7 +470,7 @@ class FitE_q(FitMechanism):
 
 class FitE_qC(FitMechanism):
     """
-    Scheme for fitting a CV for a quasi-reversible one electron transfer, followed by
+    Scheme for fitting a CV for a quasi-reversible one-electron transfer, followed by
     a reversible first order homogeneous chemical transformation mechanism.
 
     Parameters
@@ -598,7 +598,7 @@ class FitE_qC(FitMechanism):
             k_backward: _ParamGuess = None,
     ) -> tuple[np.ndarray, np.ndarray, dict]:
         """
-        Fits the CV for a quasi-reversible one electron transfer, followed by a reversible first
+        Fits the CV for a quasi-reversible one-electron transfer, followed by a reversible first
         order homogeneous chemical transformation mechanism.
         If a parameter is given, it must be a: float for initial guess of parameter; tuple[float, float] for
         (lower bound, upper bound) of the initial guess; or tuple[float, float, float] for
@@ -630,7 +630,7 @@ class FitE_qC(FitMechanism):
 
         Returns
         -------
-        voltage_to_fit : np.ndarray
+        voltage : np.ndarray
             Array of potential (V) values of the CV fit.
         current_fit : np.ndarray
             Array of current (A) values of the CV fit.
@@ -756,8 +756,8 @@ class FitEE(FitMechanism):
         # default [initial guess, lower bound, upper bound]
         self.default_vars |= {
             'reduction_potential2': [
-                round((self.voltage_to_fit[np.argmax(self.current_to_fit)]
-                       + self.voltage_to_fit[np.argmin(self.current_to_fit)]) / 2, 3),
+                round((self.voltage[np.argmax(self.current_to_fit)]
+                       + self.voltage[np.argmin(self.current_to_fit)]) / 2, 3),
                 min(self.start_potential, self.switch_potential),
                 max(self.start_potential, self.switch_potential),
             ],
@@ -838,7 +838,7 @@ class FitEE(FitMechanism):
 
         Returns
         -------
-        voltage_to_fit : np.ndarray
+        voltage : np.ndarray
             Array of potential (V) values of the CV fit.
         current_fit : np.ndarray
             Array of current (A) values of the CV fit.
@@ -990,8 +990,8 @@ class FitSquareScheme(FitMechanism):
         # default [initial guess, lower bound, upper bound]
         self.default_vars |= {
             'reduction_potential2': [
-                round((self.voltage_to_fit[np.argmax(self.current_to_fit)]
-                       + self.voltage_to_fit[np.argmin(self.current_to_fit)]) / 2, 3),
+                round((self.voltage[np.argmax(self.current_to_fit)]
+                       + self.voltage[np.argmin(self.current_to_fit)]) / 2, 3),
                 min(self.start_potential, self.switch_potential),
                 max(self.start_potential, self.switch_potential),
             ],
@@ -1090,7 +1090,7 @@ class FitSquareScheme(FitMechanism):
 
         Returns
         -------
-        voltage_to_fit : np.ndarray
+        voltage : np.ndarray
             Array of potential (V) values of the CV fit.
         current_fit : np.ndarray
             Array of current (A) values of the CV fit.

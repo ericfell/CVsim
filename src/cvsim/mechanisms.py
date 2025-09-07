@@ -161,7 +161,7 @@ class CyclicVoltammetryScheme(ABC):
     @abstractmethod
     def simulate(self) -> tuple[np.ndarray, np.ndarray]:
         """
-        Simulates current-potential profile for desired mechanism
+        Simulates current-potential profile for desired mechanism.
 
         Returns
         -------
@@ -176,14 +176,14 @@ class CyclicVoltammetryScheme(ABC):
 
 class E_rev(CyclicVoltammetryScheme):
     """
-    Provides a current-potential profile for a reversible (Nernstian) one electron transfer mechanism.
+    Provides a current-potential profile for a reversible (Nernstian) one-electron transfer mechanism.
     This is equation (7:7) from [1].
 
     """
 
     def simulate(self) -> tuple[np.ndarray, np.ndarray]:
         """
-        Simulates the CV for a reversible one electron transfer mechanism.
+        Simulates the CV for a reversible one-electron transfer mechanism.
 
         Returns
         -------
@@ -208,7 +208,7 @@ class E_rev(CyclicVoltammetryScheme):
 
 class E_q(CyclicVoltammetryScheme):
     """
-    Provides a current-potential profile for a quasi-reversible one electron transfer mechanism.
+    Provides a current-potential profile for a quasi-reversible one-electron transfer mechanism.
     This is equation (8:3) from [1].
 
     Parameters
@@ -278,7 +278,7 @@ class E_q(CyclicVoltammetryScheme):
 
     def simulate(self) -> tuple[np.ndarray, np.ndarray]:
         """
-        Simulates the CV for a quasi-reversible one electron transfer mechanism.
+        Simulates the CV for a quasi-reversible one-electron transfer mechanism.
 
         Returns
         -------
@@ -307,7 +307,7 @@ class E_q(CyclicVoltammetryScheme):
 
 class E_qC(CyclicVoltammetryScheme):
     """
-    Provides a current-potential profile for a quasi-reversible one electron transfer, followed by a reversible first
+    Provides a current-potential profile for a quasi-reversible one-electron transfer, followed by a reversible first
     order homogeneous chemical transformation mechanism.
     This is equation (10:4) from [1].
 
@@ -388,7 +388,7 @@ class E_qC(CyclicVoltammetryScheme):
 
     def simulate(self) -> tuple[np.ndarray, np.ndarray]:
         """
-        Simulates the CV for a quasi-reversible one electron transfer followed by a reversible first order homogeneous
+        Simulates the CV for a quasi-reversible one-electron transfer followed by a reversible first order homogeneous
         chemical transformation mechanism.
 
         Returns
@@ -580,7 +580,7 @@ class EE(CyclicVoltammetryScheme):
 class SquareScheme(CyclicVoltammetryScheme):
     """
     Provides a current-potential profile for two quasi-reversible, one-electron transfers of homogeneously
-    interconverting reactants (square scheme).
+    interconverting reactants (Square Scheme).
     This is equations (14:14 and 14:15) from [1].
 
     Parameters
@@ -685,7 +685,7 @@ class SquareScheme(CyclicVoltammetryScheme):
     def simulate(self) -> tuple[np.ndarray, np.ndarray]:
         """
         Simulates the CV for two quasi-reversible, one-electron transfers of homogeneously interconverting
-        reactants (square scheme).
+        reactants (Square Scheme).
 
         Returns
         -------
