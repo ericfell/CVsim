@@ -20,6 +20,7 @@ Currently available mechanisms:
 git clone git@github.com:ericfell/CVsim.git
 ```
 
+See [Getting started with `cvsim.py`](https://cvsim.readthedocs.io/en/latest/getting-started.html) for instructions on simulating CVs.
 
 ## Dependencies
 
@@ -77,7 +78,7 @@ potential, current = E_rev(
     digital simulation, *Electrochimica Acta*, **56**, 2011, 10612-10625.](https://www.sciencedirect.com/science/article/abs/pii/S0013468611007651)
 
 
-*The schemes for CE<sub>r</sub> , catalytic C'E<sub>q</sub> , and E<sub>r</sub>CE<sub>r</sub> are currently in development
+*The schemes for CE<sub>r</sub> , catalytic C'E<sub>q</sub> , and E<sub>r</sub>CE<sub>r</sub> need development, PRs welcome!
 
 
 ## License
