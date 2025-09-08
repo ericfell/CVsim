@@ -175,7 +175,7 @@ class FitMechanism(ABC):
     def _scheme(self, get_var: Callable[[str], float]) -> CyclicVoltammetryScheme:
         raise NotImplementedError
 
-    def _fit(self, fit_vars: dict[str, _ParamGuess]) -> tuple[np.ndarray, np.ndarray, dict]:
+    def _fit(self, fit_vars: dict[str, _ParamGuess]) -> tuple[np.ndarray, np.ndarray, dict[str, float]]:
         fit_vars = self._non_none_dict(fit_vars)
         fixed_vars = self._non_none_dict(self.fixed_vars)
 
@@ -246,7 +246,7 @@ class FitMechanism(ABC):
         current_fit = fit_function(self.voltage, *popt)
         sigma = np.sqrt(np.diag(pcov))  # one standard deviation of the parameters
 
-        final_fit = {}
+        final_fit: dict[str, float] = {}
         for val, error, param in zip(popt, sigma, fitting_params):
             final_fit[param] = val
             print(f"Final fit: '{param}': {val:.2E} +/- {error:.0E}")
@@ -280,7 +280,7 @@ class FitE_rev(FitMechanism):
             reduction_potential: _ParamGuess = None,
             diffusion_reactant: _ParamGuess = None,
             diffusion_product: _ParamGuess = None,
-    ) -> tuple[np.ndarray, np.ndarray, dict]:
+    ) -> tuple[np.ndarray, np.ndarray, dict[str, float]]:
         """
         Fits the CV for a reversible (Nernstian) one-electron transfer mechanism.
         If a parameter is given, it must be a: float for initial guess of parameter; tuple[float, float] for
@@ -305,7 +305,7 @@ class FitE_rev(FitMechanism):
             Array of potential (V) values of the CV fit.
         current_fit : np.ndarray
             Array of current (A) values of the CV fit.
-        final_fit : dict
+        final_fit : dict[str, float]
             Dictionary of final fitting parameter values of the CV fit.
 
         """
@@ -424,7 +424,7 @@ class FitE_q(FitMechanism):
             diffusion_product: _ParamGuess = None,
             alpha: _ParamGuess = None,
             k0: _ParamGuess = None,
-    ) -> tuple[np.ndarray, np.ndarray, dict]:
+    ) -> tuple[np.ndarray, np.ndarray, dict[str, float]]:
         """
         Fits the CV for a quasi-reversible one-electron transfer mechanism.
         If a parameter is given, it must be a: float for initial guess of parameter; tuple[float, float] for
@@ -455,7 +455,7 @@ class FitE_q(FitMechanism):
             Array of potential (V) values of the CV fit.
         current_fit : np.ndarray
             Array of current (A) values of the CV fit.
-        final_fit : dict
+        final_fit : dict[str, float]
             Dictionary of final fitting parameter values of the CV fit.
 
         """
@@ -596,7 +596,7 @@ class FitE_qC(FitMechanism):
             k0: _ParamGuess = None,
             k_forward: _ParamGuess = None,
             k_backward: _ParamGuess = None,
-    ) -> tuple[np.ndarray, np.ndarray, dict]:
+    ) -> tuple[np.ndarray, np.ndarray, dict[str, float]]:
         """
         Fits the CV for a quasi-reversible one-electron transfer, followed by a reversible first
         order homogeneous chemical transformation mechanism.
@@ -634,7 +634,7 @@ class FitE_qC(FitMechanism):
             Array of potential (V) values of the CV fit.
         current_fit : np.ndarray
             Array of current (A) values of the CV fit.
-        final_fit : dict
+        final_fit : dict[str, float]
             Dictionary of final fitting parameter values of the CV fit.
 
         """
@@ -799,7 +799,7 @@ class FitEE(FitMechanism):
             alpha2: _ParamGuess = None,
             k0: _ParamGuess = None,
             k0_2: _ParamGuess = None,
-    ) -> tuple[np.ndarray, np.ndarray, dict]:
+    ) -> tuple[np.ndarray, np.ndarray, dict[str, float]]:
         """
         Fits the CV for a two successive one-electron quasi-reversible transfer mechanism.
         If a parameter is given, it must be a: float for initial guess of parameter; tuple[float, float] for
@@ -842,7 +842,7 @@ class FitEE(FitMechanism):
             Array of potential (V) values of the CV fit.
         current_fit : np.ndarray
             Array of current (A) values of the CV fit.
-        final_fit : dict
+        final_fit : dict[str, float]
             Dictionary of final fitting parameter values of the CV fit.
 
         """
@@ -1042,7 +1042,7 @@ class FitSquareScheme(FitMechanism):
             k_backward: _ParamGuess = None,
             k_forward2: _ParamGuess = None,
             k_backward2: _ParamGuess = None,
-    ) -> tuple[np.ndarray, np.ndarray, dict]:
+    ) -> tuple[np.ndarray, np.ndarray, dict[str, float]]:
         """
         Fits the CV for a Square Scheme mechanism.
         If a parameter is given, it must be a: float for initial guess of parameter; tuple[float, float] for
@@ -1094,7 +1094,7 @@ class FitSquareScheme(FitMechanism):
             Array of potential (V) values of the CV fit.
         current_fit : np.ndarray
             Array of current (A) values of the CV fit.
-        final_fit : dict
+        final_fit : dict[str, float]
             Dictionary of final fitting parameter values of the CV fit.
 
         """
