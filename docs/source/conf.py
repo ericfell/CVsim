@@ -28,6 +28,12 @@ extensions = [
     'nbsphinx',
 ]
 
+autodoc_default_options = {
+    'members': True,
+    'undoc-members': True,
+    'inherited-members': True,
+}
+
 templates_path = ['_templates']
 exclude_patterns = []
 
