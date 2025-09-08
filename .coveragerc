@@ -8,5 +8,5 @@ skip_empty = true
 exclude_also =
     raise NotImplementedError
 
-    ; don't complain abput abstract methods, they aren't run:
+    ; don't complain about abstract methods, they aren't run:
     @(abc\.)?abstractmethod

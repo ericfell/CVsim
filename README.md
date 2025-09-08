@@ -3,7 +3,7 @@
 CVsim
 --------
 
-`cvsim` is a Python package for cyclic voltammogram (CV) simulation via a semi-analytical method developed by Oldham and Myland<sup>1</sup>. It is valid for CV experiments performed on disk macroelectrodes, and uses a semiintegration algorithm. In the limit of infinitely small potential steps, this algorithm is an exact solution. 
+`cvsim` is a Python package for cyclic voltammogram (CV) simulation via a semi-analytical method developed by Oldham and Myland<sup>1</sup>. It is valid for CV experiments performed on disk macroelectrodes, and uses a semi-integration algorithm. In the limit of infinitely small potential steps, this algorithm is an exact solution. 
 Due to the precision of standard potentiostats, simulations that use a potential step of 1-5 mV typically provide a reasonable accuracy-computing time trade-off, where accuracy sanity checks (e.g. Randles-Sevcik relationship for E<sub>r</sub> and E<sub>q</sub> mechanisms) have been performed.
 
 
@@ -31,7 +31,7 @@ git clone git@github.com:ericfell/CVsim.git
 
 ## Package Structure
 
-- `mechanisms.py`: Specifies one-/two-electron process mechanism to be simulated.
+- `mechanisms.py`: Specifies one-/two-electron process mechanisms to be simulated.
 - `fit_curve.py`: Performs fitting of experimental CV data according to a desired mechanism. 
 
 
