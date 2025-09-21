@@ -21,7 +21,7 @@ or contribute code improvements and
 Installation
 ------------
 
-:code:`cvsim.py` can be installed from PyPI with pip:
+:code:`cvsim.py` can be installed from `PyPI <https://pypi.org/project/cvsim/>`_ with pip:
 
 .. code-block:: bash
 
