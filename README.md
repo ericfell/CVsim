@@ -1,4 +1,4 @@
-[![Documentation Status](https://readthedocs.org/projects/cvsim/badge/?version=latest)](https://cvsim.readthedocs.io/en/latest/?badge=latest) [![codecov](https://codecov.io/gh/ericfell/CVsim/graph/badge.svg?token=90223DIBVS)](https://codecov.io/gh/ericfell/CVsim)  [![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)  [![linting: pylint](https://img.shields.io/badge/linting-pylint-yellowgreen)](https://github.com/pylint-dev/pylint)
+[![Documentation Status](https://readthedocs.org/projects/cvsim/badge/?version=latest)](https://cvsim.readthedocs.io/en/latest/?badge=latest) [![codecov](https://codecov.io/gh/ericfell/CVsim/graph/badge.svg?token=90223DIBVS)](https://codecov.io/gh/ericfell/CVsim)  [![Checked with mypy](http://www.mypy-lang.org/static/mypy_badge.svg)](http://mypy-lang.org/)  [![linting: pylint](https://img.shields.io/badge/linting-pylint-yellowgreen)](https://github.com/pylint-dev/pylint) [![pypi](https://img.shields.io/pypi/v/cvsim?color=orange)](https://pypi.org/project/cvsim/)
 
 CVsim
 --------
@@ -14,7 +14,7 @@ Currently available mechanisms:
 
 ## Installation
 
-`cvsim` can be installed from PyPI using pip:
+`cvsim` can be installed from [PyPI](https://pypi.org/project/cvsim/) using pip:
 
 ```bash
 pip install cvsim
