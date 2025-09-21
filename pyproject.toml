@@ -16,10 +16,13 @@ requires-python = ">=3.10"
 dependencies = ["scipy"]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 keywords = ["electrochemistry", "cyclic voltammetry"]
+license = "MIT"
+license-files = [
+    "LICENSE",
+]
 
 [project.urls]
 Homepage = "https://github.com/ericfell/CVsim"

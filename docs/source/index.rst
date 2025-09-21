@@ -21,7 +21,11 @@ or contribute code improvements and
 Installation
 ------------
 
-:code:`cvsim.py` can be installed ....
+:code:`cvsim.py` can be installed from PyPI with pip:
+
+.. code-block:: bash
+
+   pip install cvsim
 
 
 Dependencies

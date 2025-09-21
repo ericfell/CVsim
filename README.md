@@ -14,10 +14,10 @@ Currently available mechanisms:
 
 ## Installation
 
-`cvsim` can be installed from GitHub:
+`cvsim` can be installed from PyPI using pip:
 
 ```bash
-git clone git@github.com:ericfell/CVsim.git
+pip install cvsim
 ```
 
 See [Getting started with `cvsim.py`](https://cvsim.readthedocs.io/en/latest/getting-started.html) for instructions on simulating CVs.
